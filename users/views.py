@@ -4,6 +4,9 @@ from rest_framework.exceptions import ValidationError
 import random
 from django.core.mail import send_mail
 from django.conf import settings
+from .serializers import *
+from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import AllowAny,IsAuthenticated
 
 def send_email(user):
     active_codes=CodeVerify.objects.filter(user=user,expiration_time__gte=datetime.now())
@@ -27,4 +30,9 @@ def send_email(user):
     except Exception as e:
         raise ValidationError({'message':f" Email yuborishda xatolik: {e}"})
 
+
+class SingUpView(CreateAPIView):
+    permission_classes = (AllowAny, )
+    serializer_class = SingUpSerializers
+    queryset = CustomUser
 
