@@ -26,3 +26,5 @@ def send_email(user):
         return True
     except Exception as e:
         raise ValidationError({'message':f" Email yuborishda xatolik: {e}"})
+
+
