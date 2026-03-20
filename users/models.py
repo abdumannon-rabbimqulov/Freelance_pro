@@ -8,20 +8,20 @@ from django.core.cache import cache
 import uuid
 import random
 
-ADMIN,SELLER,Custom=('admin','seller','custom')
+ADMIN,SELLER,CUSTOM=('admin','seller','custom')
 NEW,CODE_VERIFY,DONE=('new','code_verify','done')
 class CustomUser(AbstractUser,BasModel):
     USER_ROLE=(
         (ADMIN,ADMIN),
         (SELLER,SELLER),
-        (Custom,Custom),
+        (CUSTOM,CUSTOM),
     )
     USER_STATUS=(
     (NEW,NEW),
     (CODE_VERIFY,CODE_VERIFY),
     (DONE,DONE)
     )
-    auth_role=models.CharField(choices=USER_ROLE,max_length=20)
+    auth_role=models.CharField(choices=USER_ROLE,default=CUSTOM,max_length=20)
     auth_status=models.CharField(choices=USER_STATUS,default=NEW,max_length=20)
     email=models.EmailField(unique=True)
     phone=models.CharField(unique=True,max_length=13,blank=True,null=True)
