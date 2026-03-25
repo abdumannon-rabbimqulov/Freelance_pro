@@ -47,10 +47,9 @@ class Category(models.Model):
 
 
 class Product(models.Model):
-
-
     title = models.CharField(max_length=300, verbose_name="Sarlavha")
     slug = models.SlugField(max_length=300, unique=True, blank=True)
+    image_vector = models.JSONField(null=True, blank=True)
     seller = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
@@ -88,7 +87,8 @@ class Product(models.Model):
 
     main_image = models.ImageField(
         upload_to='products/main/',
-        verbose_name="Asosiy rasm"
+        verbose_name="Asosiy rasm",
+        null=True,blank=True
     )
 
     views_count = models.IntegerField(default=0, verbose_name="Ko'rilganlar")
