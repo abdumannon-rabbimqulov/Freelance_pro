@@ -1,24 +1,27 @@
 from django.db import models
-
+from rest_framework_simplejwt.tokens import RefreshToken
+from shared.models import BasModel
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 from datetime import datetime,timedelta
 from django.core.cache import cache
+import uuid
+import random
 
-ADMIN,SELLER,Custom=('admin','seller','custom')
+ADMIN,SELLER,CUSTOMER=('admin','seller','customer')
 NEW,CODE_VERIFY,DONE=('new','code_verify','done')
-class CustomUser(AbstractUser):
+class CustomUser(AbstractUser,BasModel):
     USER_ROLE=(
         (ADMIN,ADMIN),
         (SELLER,SELLER),
-        (Custom,Custom),
+        (CUSTOMER,CUSTOMER),
     )
     USER_STATUS=(
     (NEW,NEW),
     (CODE_VERIFY,CODE_VERIFY),
     (DONE,DONE)
     )
-    auth_role=models.CharField(choices=USER_ROLE,max_length=20)
+    auth_role=models.CharField(choices=USER_ROLE,default=CUSTOMER,max_length=20)
     auth_status=models.CharField(choices=USER_STATUS,default=NEW,max_length=20)
     email=models.EmailField(unique=True)
     phone=models.CharField(unique=True,max_length=13,blank=True,null=True)
@@ -26,11 +29,9 @@ class CustomUser(AbstractUser):
             blank=True,null=True,
             validators=[FileExtensionValidator(allowed_extensions=['png','jpg','heic'])]
                             )
-    created_at=models.DateTimeField(auto_now_add=True)
-
 
     def __str__(self):
-        return self.username
+        return f"{self.username} Role {self.auth_role}"
 
     @property
     def is_online(self):
@@ -40,6 +41,44 @@ class CustomUser(AbstractUser):
     def last_seen(self):
         return cache.get(f"last-seen-{self.id}")
 
+
+    def check_username(self):
+        if not self.username:
+            temp_username=f"username{uuid.uuid4().__str__().split('-')[-1]}"
+            while CustomUser.objects.filter(username=temp_username).exists():
+                temp_username+=str(random.randint(0,9))
+
+            self.username=temp_username
+    def check_pass(self):
+        if not self.password:
+            temp_password=f"pass{uuid.uuid4().__str__().split('-')[-1]}"
+
+            self.set_password(temp_password)
+
+    def check_email(self):
+        if self.email:
+            email_normalize=self.email.lower()
+            self.email=email_normalize
+
+
+
+    def save(self,*args,**kwargs):
+        self.check_email()
+        self.check_username()
+        self.check_pass()
+        super().save(*args,**kwargs)
+
+
+
+
+
+    def token(self):
+        refresh_token=RefreshToken.for_user(self)
+        data={
+            'refresh':str(refresh_token),
+            'access':str(refresh_token.access_token)
+        }
+        return data
 
 
 class CodeVerify(models.Model):
