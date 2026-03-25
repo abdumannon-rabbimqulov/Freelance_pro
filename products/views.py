@@ -9,6 +9,7 @@ from django.db import models
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -25,7 +26,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                     product.image_vector = vector
                     product.save(update_fields=['image_vector'])
             except Exception as e:
-                print(f"Rasm vektorlashda xatolik: {e}")
+                raise ValidationError({"message":f"Rasm vektorlashda xatolik: {e}"})
 
 
 
@@ -35,17 +36,14 @@ class SimilarProductListView(APIView):
     permission_classes = (AllowAny, )
 
     def post(self, request, *args, **kwargs):
-        # 1. Rasmni olish
         image_file = request.FILES.get('image')
         if not image_file:
             return Response({"error": "Rasm yuklanmadi (key nomi 'image' bo'lishi kerak)"}, status=400)
 
-        # 2. Vektorlash
         query_vector = generate_image_vector(image_file)
         if not query_vector:
             return Response({"error": "Rasmni qayta ishlab bo'lmadi"}, status=500)
 
-        # 3. O'xshashlikni qidirish
         all_products = Product.objects.exclude(image_vector__isnull=True)
         product_matches = []
 
@@ -59,7 +57,7 @@ class SimilarProductListView(APIView):
             # Cosine Similarity
             similarity = np.dot(v1, v2) / (v1_norm * v2_norm)
 
-            if similarity > 0.7:  # O'xshashlik darajasi
+            if similarity > 0.7:
                 product_matches.append((product.id, similarity))
 
         # 4. Saralash va Natija
@@ -69,9 +67,10 @@ class SimilarProductListView(APIView):
         if not matched_ids:
             return Response([], status=200)
 
-        # Tartibni saqlash uchun models.Case
         preserved = models.Case(*[models.When(pk=pk, then=pos) for pos, pk in enumerate(matched_ids)])
         queryset = Product.objects.filter(id__in=matched_ids).order_by(preserved)
 
         serializer = ProductSerializers(queryset, many=True)
         return Response(serializer.data)
+
+    
