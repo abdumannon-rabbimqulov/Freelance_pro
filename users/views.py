@@ -1,9 +1,6 @@
 from .models import CodeVerify,NEW,CODE_VERIFY,DONE
 from datetime import datetime
 from rest_framework.exceptions import ValidationError
-import random
-from django.core.mail import send_mail
-from django.conf import settings
 from .serializers import *
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,32 +9,6 @@ from rest_framework.generics import CreateAPIView,UpdateAPIView
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-
-
-
-
-
-def send_email(user):
-    active_codes=CodeVerify.objects.filter(user=user,expiration_time__gte=datetime.now())
-    if active_codes.exists():
-        raise ValidationError({'message':'sizda active code bor'})
-    code =random.randint(1000,9999)
-    CodeVerify.objects.create(
-        code=code,
-        user=user,
-    )
-
-    try:
-        send_mail(
-            "Tasdiqlash kodi",
-            f" Sizning tasdiqlash kodingiz {code}",
-            settings.EMAIL_HOST_USER,
-            [user.email],
-            fail_silently = False,
-        )
-        return True
-    except Exception as e:
-        raise ValidationError({'message':f" Email yuborishda xatolik: {e}"})
 
 
 class SingUpView(CreateAPIView):

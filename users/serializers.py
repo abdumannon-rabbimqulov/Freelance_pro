@@ -4,7 +4,7 @@ from .models import (CodeVerify,
             CODE_VERIFY,DONE
             )
 from rest_framework.exceptions import ValidationError
-from .views import send_email
+from shared.views import send_email
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from shared.views import check_email_or_username
 from django.contrib.auth import authenticate
