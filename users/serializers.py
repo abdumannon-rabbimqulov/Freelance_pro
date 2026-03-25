@@ -26,8 +26,11 @@ class SingUpSerializers(serializers.ModelSerializer):
 
     def validate(self, attrs):
         auth_role=attrs.get('auth_role')
+        email=attrs.get('email')
         if auth_role==ADMIN:
             raise ValidationError({"message":"siz admin to'g'idan to'g'ri admin huquqiga ega bo'lmasiz"})
+        elif CustomUser.objects.filter(email=email).exists():
+            raise ValidationError({'message':'email mavjud'})
         return attrs
 
     def create(self, validated_data):
