@@ -93,7 +93,6 @@ class Product(models.Model):
 
     views_count = models.IntegerField(default=0, verbose_name="Ko'rilganlar")
     orders_count = models.IntegerField(default=0, verbose_name="Buyurtmalar")
-    reviews_count = models.IntegerField(default=0, verbose_name="Sharhlar")
     is_active=models.BooleanField(default=True)
 
 

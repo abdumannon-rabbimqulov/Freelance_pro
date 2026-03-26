@@ -1,12 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render,get_object_or_404
 from .models import ProductImage,Product
-from .serializers import ProductSerializers
-from rest_framework import viewsets, permissions
+from .serializers import *
+from rest_framework import viewsets, permissions,status
 from .services import generate_image_vector
 from rest_framework.generics import ListAPIView
 import numpy as np
 from django.db import models
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -27,7 +27,6 @@ class ProductViewSet(viewsets.ModelViewSet):
                     product.save(update_fields=['image_vector'])
             except Exception as e:
                 raise ValidationError({"message":f"Rasm vektorlashda xatolik: {e}"})
-
 
 
 
@@ -54,13 +53,11 @@ class SimilarProductListView(APIView):
             v2 = np.array(product.image_vector)
             v2_norm = np.linalg.norm(v2)
 
-            # Cosine Similarity
             similarity = np.dot(v1, v2) / (v1_norm * v2_norm)
 
             if similarity > 0.7:
                 product_matches.append((product.id, similarity))
 
-        # 4. Saralash va Natija
         product_matches.sort(key=lambda x: x[1], reverse=True)
         matched_ids = [item[0] for item in product_matches[:10]]
 
@@ -73,4 +70,43 @@ class SimilarProductListView(APIView):
         serializer = ProductSerializers(queryset, many=True)
         return Response(serializer.data)
 
-    
+class ProductListView(ListAPIView):
+    permission_classes = (AllowAny, )
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializers
+
+
+
+class ProductDetailView(APIView):
+    permission_classes = (AllowAny, )
+    def get(self,request,pk):
+        product=get_object_or_404(Product,id=pk)
+        product.increment_views()
+        serializer=ProductSerializers(product)
+        response={
+            'status':status.HTTP_200_OK,
+            'message':'product',
+            'data':serializer.data
+        }
+        return Response(response)
+    def post(self,request,pk):
+        product = get_object_or_404(Product, pk=pk)
+        user=self.request.user
+        if not user.is_authenticated:
+            raise ValidationError({'message':'siz royxatdan otmagansiz'})
+        serializer=ReviewCreateSerializers(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.save(user=user,product=product)
+        except Exception as e:
+            return Response(
+                {"error": f"Siz bu mahsulotga allaqachon sharh qoldirgansiz."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        else:
+            response={
+                'status':status.HTTP_200_OK,
+                'message':'sharhingiz uchun raxmat',
+                'data':serializer.data
+            }
+        return Response(response)
