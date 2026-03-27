@@ -101,7 +101,6 @@ class ProductDetailView(APIView):
         except Exception as e:
             return Response(
                 {"error": f"Siz bu mahsulotga allaqachon sharh qoldirgansiz."},
-                status=status.HTTP_400_BAD_REQUEST
             )
         else:
             response={
@@ -110,3 +109,14 @@ class ProductDetailView(APIView):
                 'data':serializer.data
             }
         return Response(response)
+
+
+
+class ProductList(ListAPIView):
+    class ProductListView(ListAPIView):
+        permission_classes = (AllowAny,)
+        serializer_class = ProductSerializers
+
+        def get_queryset(self):
+            user=self.request.user
+            return Product.objects.filter(seller=user)

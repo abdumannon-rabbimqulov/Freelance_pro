@@ -11,4 +11,5 @@ urlpatterns=[
     path('similar-search/', SimilarProductListView.as_view(), name='similar-product-search'),
     path('product-list/',ProductListView.as_view()),
     path('product/<int:pk>/',ProductDetailView.as_view()),
+    path('product-seller-list/',ProductList.as_view())
 ]

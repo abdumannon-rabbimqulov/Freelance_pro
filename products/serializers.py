@@ -2,8 +2,8 @@ from rest_framework import serializers
 from .models import Product,Category,ProductImage,Review
 
 class ReviewSerializer(serializers.ModelSerializer):
-    user = serializers.ReadOnlyField(source='user.username') # Foydalanuvchi nomini ko'rsatish uchun
-
+    user = serializers.ReadOnlyField(source='user.username')
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     class Meta:
         model = Review
         fields = ['id', 'user', 'rating', 'comment', 'created_at']

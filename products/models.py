@@ -48,7 +48,7 @@ class Category(models.Model):
 
 class Product(models.Model):
     title = models.CharField(max_length=300, verbose_name="Sarlavha")
-    slug = models.SlugField(max_length=300, unique=True, blank=True)
+    slug = models.SlugField(max_length=300, unique=True, blank=True,null=True)
     image_vector = models.JSONField(null=True, blank=True)
     seller = models.ForeignKey(
         CustomUser,
@@ -106,7 +106,15 @@ class Product(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            base_slug = slugify(self.title)
+            slug = base_slug
+            counter = 1
+
+            while self.__class__.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            self.slug = slug
         super().save(*args, **kwargs)
 
     def increment_views(self):
