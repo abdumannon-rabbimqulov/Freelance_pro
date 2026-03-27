@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product,Category,ProductImage,Review
+from .models import *
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.username')
@@ -49,3 +49,12 @@ class ReviewCreateSerializers(serializers.ModelSerializer):
         if value < 1 or value > 5:
             raise serializers.ValidationError("Reyting 1 dan 5 gacha bo'lishi kerak!")
         return value
+
+
+
+class MessageSerializers(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+
+    class Meta:
+        model=Messages
+        fields=("product","chat",'created_at','image','text','is_read')

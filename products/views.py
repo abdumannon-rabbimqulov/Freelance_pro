@@ -3,7 +3,7 @@ from .models import ProductImage,Product
 from .serializers import *
 from rest_framework import viewsets, permissions,status
 from .services import generate_image_vector
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView,CreateAPIView
 import numpy as np
 from django.db import models
 from rest_framework.permissions import AllowAny,IsAuthenticated
@@ -113,10 +113,19 @@ class ProductDetailView(APIView):
 
 
 class ProductList(ListAPIView):
-    class ProductListView(ListAPIView):
-        permission_classes = (AllowAny,)
-        serializer_class = ProductSerializers
+    """userni o'ziniki"""
+    permission_classes = (AllowAny,)
+    serializer_class = ProductSerializers
 
-        def get_queryset(self):
-            user=self.request.user
-            return Product.objects.filter(seller=user)
+    def get_queryset(self):
+        user=self.request.user
+        return Product.objects.filter(seller=user)
+
+
+
+class MessageStart(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    def post(self,request,pk):
+        serialiser=MessageSerializers(data=request.data)
+        serialiser.is_valid(raise_exception=True)
