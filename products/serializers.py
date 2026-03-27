@@ -52,9 +52,22 @@ class ReviewCreateSerializers(serializers.ModelSerializer):
 
 
 
+class MessageStartSerializers(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+
+    class Meta:
+        model=Messages
+        fields=('created_at','image','text','is_read')
+
 class MessageSerializers(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
 
     class Meta:
         model=Messages
-        fields=("product","chat",'created_at','image','text','is_read')
+        fields=('created_at','image','text','is_read')
+
+
+class ChatSerializers(serializers.ModelSerializer):
+    class Meta:
+        model=Chat
+        fields=('id', 'recipient_name', 'last_message_text', 'created_at')

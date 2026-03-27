@@ -127,5 +127,41 @@ class MessageStart(APIView):
     permission_classes = (IsAuthenticated, )
 
     def post(self,request,pk):
-        serialiser=MessageSerializers(data=request.data)
+        user=self.request.user
+        serialiser=MessageStartSerializers(data=request.data)
         serialiser.is_valid(raise_exception=True)
+        product=get_object_or_404(Product,pk=pk)
+        chat = Chat.objects.filter(participants=user).filter(participants__id=product.seller).first()
+        if not chat:
+            new_chat=Chat.objects.create()
+            new_chat.participants.add(user,product.seller)
+            serialiser.save(
+                user=user,
+                chat=new_chat,
+                product=product
+            )
+
+        serialiser.save(
+            user=user,
+            chat=chat,
+            product=product
+        )
+
+        response={
+            'status':status.HTTP_200_OK,
+            'message':'xabariz  yuborildi'
+        }
+        return Response(response)
+
+
+
+class ChatListView(APIView):
+    permission_classes = (IsAuthenticated, )
+    def post(self,request):
+        user=self.request.user
+        chat=Chat.objects.filter(participants=user)
+        pass
+
+
+
+
