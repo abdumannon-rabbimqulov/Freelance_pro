@@ -160,7 +160,7 @@ class ChatListView(APIView):
     def post(self,request):
         user=self.request.user
         chat=Chat.objects.filter(participants=user)
-        pass
+
 
 
 
