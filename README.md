@@ -14,3 +14,14 @@ pip install -r requirements.txt
 ```markdown
 EMAIL_HOST_USER=emailiz
 EMAIL_HOST_PASSWORD=email kod yuborish uchun parol 16 talik 
+```
+# install 
+```markdown
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+# ishlatish
+```markdown
+python manage.py migrate
+python manage.py runserver
+```
