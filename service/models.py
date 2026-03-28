@@ -11,14 +11,14 @@ class ProjectBoard(models.Model):
     seller = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name='products'
+        related_name='project'
     )
 
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='products'
+        related_name='project'
     )
 
     description = models.TextField()

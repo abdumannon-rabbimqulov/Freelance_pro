@@ -67,7 +67,26 @@ class MessageSerializers(serializers.ModelSerializer):
         fields=('created_at','image','text','is_read')
 
 
-class ChatSerializers(serializers.ModelSerializer):
+from rest_framework import serializers
+
+class ChatListSerializer(serializers.ModelSerializer):
+    recipient_username = serializers.SerializerMethodField()
+    last_message_text = serializers.SerializerMethodField()
+    last_message_time = serializers.SerializerMethodField()
+
     class Meta:
-        model=Chat
-        fields=('id', 'recipient_name', 'last_message_text', 'created_at')
+        model = Chat
+        fields = ['id', 'recipient_username', 'last_message_text', 'last_message_time']
+
+    def get_recipient_username(self, obj):
+        request_user = self.context.get('request').user
+        recipient = obj.get_recipient(request_user)
+        return recipient.username if recipient else "Noma'lum foydalanuvchi"
+
+    def get_last_message_text(self, obj):
+        last_msg = obj.last_message()
+        return last_msg.text if last_msg else "Xabarlar yo'q"
+
+    def get_last_message_time(self, obj):
+        last_msg = obj.last_message()
+        return last_msg.created_at if last_msg else None

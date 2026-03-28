@@ -157,9 +157,13 @@ class MessageStart(APIView):
 
 class ChatListView(APIView):
     permission_classes = (IsAuthenticated, )
-    def post(self,request):
-        user=self.request.user
-        chat=Chat.objects.filter(participants=user)
+
+    def get(self, request):
+        user = request.user
+        chats = Chat.objects.filter(participants=user).order_by('-created_at')
+
+        serializer = ChatListSerializer(chats, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 

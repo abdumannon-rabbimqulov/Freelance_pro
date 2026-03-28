@@ -394,7 +394,8 @@
 
         /* USER */
         .user-menu { position:relative; }
-        .avatar-btn { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--green)); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:'Clash Display',sans-serif; font-size:14px; font-weight:700; color:#fff; transition:transform 0.2s; }
+        .avatar-btn { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--green)); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:'Clash Display',sans-serif; font-size:14px; font-weight:700; color:#fff; transition:transform 0.2s; overflow: hidden; }
+        .avatar-btn img { width:100%; height:100%; object-fit:cover; }
         .avatar-btn:hover { transform:scale(1.08); }
         .dropdown { position:absolute; top:calc(100% + 12px); right:0; background:#111120; border:1px solid var(--border2); border-radius:var(--radius); padding:8px; min-width:210px; display:none; box-shadow:0 12px 40px rgba(0,0,0,0.5); }
         .dropdown.open { display:block; }
@@ -421,7 +422,8 @@
         /* PROFILE */
         .profile-container { max-width:900px; margin:0 auto; padding:100px 40px 60px; }
         .profile-header { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-xl); padding:40px; display:flex; align-items:center; gap:32px; margin-bottom:28px; }
-        .profile-avatar { width:100px; height:100px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--green)); display:flex; align-items:center; justify-content:center; font-family:'Clash Display',sans-serif; font-size:38px; font-weight:700; color:#fff; flex-shrink:0; }
+        .profile-avatar { width:100px; height:100px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--green)); display:flex; align-items:center; justify-content:center; font-family:'Clash Display',sans-serif; font-size:38px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+        .profile-avatar img { width:100%; height:100%; object-fit:cover; }
         .profile-info h2 { font-size:26px; margin-bottom:4px; }
         .profile-info .role { color:var(--accent2); font-size:14px; margin-bottom:8px; }
         .profile-info .email { color:var(--text2); font-size:14px; }
@@ -698,10 +700,44 @@
             <div class="p-card">
                 <h3>⚙️ Hisob ma'lumotlari</h3>
                 <div style="display:flex;flex-direction:column;gap:14px;">
-                    <div class="form-group"><label>Email</label><input type="email" id="editEmail" placeholder="email@misol.uz"></div>
-                    <div class="form-group"><label>Yangi parol</label><input type="password" id="editPass" placeholder="••••••••"></div>
+                    <div class="form-group">
+                        <label>Ism</label>
+                        <input type="text" id="editFirstName" placeholder="Ismingiz">
+                    </div>
+                    <div class="form-group">
+                        <label>Familiya</label>
+                        <input type="text" id="editLastName" placeholder="Familiyangiz">
+                    </div>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="editUsername" placeholder="username">
+                    </div>
+                    <div class="form-group">
+                        <label>Yangi parol</label>
+                        <input type="password" id="editPass" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Parolni tasdiqlash</label>
+                        <input type="password" id="editConfPass" placeholder="••••••••">
+                    </div>
+                    <div id="profErr"></div>
                     <button class="btn btn-accent" onclick="saveProf()">Saqlash</button>
                 </div>
+            </div>
+        </div>
+        <div class="p-card" style="margin-top:20px;">
+            <h3>📷 Profil rasmini o'zgartirish</h3>
+            <div style="display:flex;flex-direction:column;gap:14px;align-items:center;">
+                <div style="position:relative;">
+                    <div id="photoPreview" style="width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--green));display:flex;align-items:center;justify-content:center;font-size:48px;color:#fff;overflow:hidden;">
+                        <span id="photoInitial">U</span>
+                        <img id="photoImg" style="display:none;width:100%;height:100%;object-fit:cover;" />
+                    </div>
+                </div>
+                <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="handlePhotoSelect()">
+                <button class="btn btn-outline" onclick="document.getElementById('photoInput').click()">Rasm tanlash</button>
+                <div id="photoErr"></div>
+                <button class="btn btn-accent" id="uploadPhotoBtn" style="display:none;" onclick="uploadPhoto()">Yuklash</button>
             </div>
         </div>
     </div>
@@ -778,37 +814,17 @@ let user = JSON.parse(localStorage.getItem('user_data')||'null');
 let allProds = [];
 let activeCat = 'all';
 let tempTk = null;
+let selectedPhoto = null;
 
 const CATS = [
-    {icon:'🎨',name:'Grafik dizayn',slug:'graphic',count:142},
-    {icon:'💻',name:'Dasturlash',slug:'programming',count:287},
-    {icon:'📱',name:'Mobil ilovalar',slug:'mobile',count:93},
-    {icon:'✍️',name:'Kontent yozish',slug:'content',count:178},
-    {icon:'📊',name:'Marketing',slug:'marketing',count:115},
-    {icon:'🎬',name:'Video tahrirlash',slug:'video',count:64},
-    {icon:'🌐',name:'Tarjima',slug:'translation',count:52},
-    {icon:'🎵',name:'Audio & Musiqa',slug:'audio',count:38},
-];
-
-const FREELANCERS = [
-    {name:'Aziz T.',role:'Full-Stack Developer',rating:4.9,jobs:124,g:'135deg,#2d1b8f,#6d3fdf'},
-    {name:'Nodira K.',role:'UI/UX Designer',rating:4.8,jobs:89,g:'135deg,#1b5c6b,#2d9faf'},
-    {name:'Jasur M.',role:'Content Writer',rating:5.0,jobs:206,g:'135deg,#1b6b3a,#2daf6a'},
-    {name:'Dilnoza S.',role:'Digital Marketer',rating:4.7,jobs:67,g:'135deg,#6b1b1b,#af3d3d'},
-    {name:'Bekzod R.',role:'Mobile Developer',rating:4.9,jobs:143,g:'135deg,#1b3a6b,#2d6aaf'},
-    {name:'Zulfiya H.',role:'Graphic Designer',rating:4.8,jobs:91,g:'135deg,#5c2d7a,#9d4dcd'},
-];
-
-const MOCK = [
-    {id:1,title:"Professional logo dizayn — 3 variant, sonsiz o'zgartirishlar",seller:'Aziz T.',price:150000,delivery:3,rating:4.9,views:1240,emoji:'🎨',cat:'graphic',desc:'Siz uchun 3 ta unikal logo varianti yarataman. Bepul 10 ta o\'zgartirish kiradi.'},
-    {id:2,title:"React + Django to'liq veb-sayt yaratish xizmati",seller:'Bekzod R.',price:850000,delivery:14,rating:5.0,views:893,emoji:'💻',cat:'programming',desc:'Zamonaviy React frontend va Django REST API backend bilan to\'liq veb-sayt.'},
-    {id:3,title:'Instagram va Telegram uchun SMM paket, oylik boshqaruv',seller:'Dilnoza S.',price:450000,delivery:30,rating:4.7,views:678,emoji:'📊',cat:'marketing',desc:'30 ta post, 30 ta story, analytics va hisobot kiradi.'},
-    {id:4,title:'Professional video tahrirlash — reklama va promo kontent',seller:'Jasur M.',price:250000,delivery:5,rating:4.8,views:412,emoji:'🎬',cat:'video',desc:'Premiere Pro va After Effects bilan professional video tahrirlash.'},
-    {id:5,title:"UI/UX dizayn — mobil ilova uchun to'liq prototip",seller:'Nodira K.',price:600000,delivery:7,rating:4.9,views:1089,emoji:'📱',cat:'graphic',desc:'Figma da to\'liq interaktiv prototip. User research va IA kiradi.'},
-    {id:6,title:"SEO optimizatsiya — Google da birinchi sahifaga chiqish",seller:'Aziz T.',price:380000,delivery:21,rating:4.6,views:567,emoji:'🔍',cat:'marketing',desc:'Texnik SEO, kontent strategiyasi va link building xizmatlari.'},
-    {id:7,title:'WordPress sayt yaratish + dizayn + hosting sozlash',seller:'Bekzod R.',price:320000,delivery:10,rating:4.7,views:344,emoji:'🌐',cat:'programming',desc:'Professional WordPress sayt, maxsus tema va 1 yillik support.'},
-    {id:8,title:"Ingliz tilidan o'zbek tiliga professional tarjima",seller:'Zulfiya H.',price:80000,delivery:2,rating:4.9,views:234,emoji:'📝',cat:'content',desc:'Har 1000 so\'z uchun. Yuridik, tibbiy va texnik matnlar.'},
-    {id:9,title:'Podcast montaj va shovqin tozalash xizmati',seller:'Jasur M.',price:120000,delivery:3,rating:4.8,views:189,emoji:'🎵',cat:'audio',desc:'Garageband va Audacity bilan professional audio tahrirlash.'},
+    {icon:'🎨',name:'Grafik dizayn',slug:'graphic',count:0},
+    {icon:'💻',name:'Dasturlash',slug:'programming',count:0},
+    {icon:'📱',name:'Mobil ilovalar',slug:'mobile',count:0},
+    {icon:'✍️',name:'Kontent yozish',slug:'content',count:0},
+    {icon:'📊',name:'Marketing',slug:'marketing',count:0},
+    {icon:'🎬',name:'Video tahrirlash',slug:'video',count:0},
+    {icon:'🌐',name:'Tarjima',slug:'translation',count:0},
+    {icon:'🎵',name:'Audio & Musiqa',slug:'audio',count:0},
 ];
 
 // PAGE NAVIGATION
@@ -817,7 +833,7 @@ function showPage(id) {
     document.getElementById(id).classList.add('active');
     window.scrollTo(0,0);
     if (id==='profile-page') loadProfile();
-    if (id==='products-page') renderPageProds(allProds.length?allProds:MOCK);
+    if (id==='products-page') renderPageProds(allProds);
 }
 
 function scrollToId(id) {
@@ -844,29 +860,16 @@ function renderCats() {
         </a>`).join('');
 }
 
-function renderFLs() {
-    document.getElementById('freelancersGrid').innerHTML = FREELANCERS.map(f=>`
-        <div class="fl-card">
-            <div class="fl-avatar">
-                <div class="fl-avatar-inner" style="background:linear-gradient(${f.g})">${f.name[0]}</div>
-                <div class="fl-online"></div>
-            </div>
-            <div class="fl-name">${f.name}</div>
-            <div class="fl-role">${f.role}</div>
-            <div class="fl-rating">⭐ ${f.rating} · ${f.jobs} bajarilgan</div>
-        </div>`).join('');
-}
-
 function prodCard(p) {
     const price = Number(p.price||p.price_standard||0);
     const views = p.views||p.views_count||0;
     const rating = Number(p.rating||p.average_rating||0).toFixed(1);
     const delivery = p.delivery||p.delivery_time_standard||1;
-    const seller = p.seller||'Noma\'lum';
+    const seller = p.seller_username||p.seller||'Noma\'lum';
     return `<div class="product-card" onclick="openPD(${p.id})">
         <div class="prod-img">
-            ${p.main_image?`<img src="${API}${p.main_image}" alt="${p.title}" loading="lazy">`:`<span>${p.emoji||'🛠'}</span>`}
-            <div class="prod-badge">${p.cat||'Xizmat'}</div>
+            ${p.main_image?`<img src="${API}${p.main_image}" alt="${p.title}" loading="lazy">`:`<span>🛠</span>`}
+            <div class="prod-badge">Xizmat</div>
         </div>
         <div class="prod-body">
             <div class="seller-row">
@@ -914,8 +917,7 @@ function filterCat(slug, btn) {
 
 function filterProds() {
     const q=(document.getElementById('pageSearch')?.value||'').toLowerCase();
-    const base = allProds.length?allProds:MOCK;
-    let f = base;
+    let f = allProds;
     if(activeCat!=='all') f=f.filter(p=>(p.cat||'').toLowerCase()===activeCat);
     if(q) f=f.filter(p=>p.title.toLowerCase().includes(q)||(p.seller||'').toLowerCase().includes(q));
     renderPageProds(f);
@@ -932,25 +934,25 @@ function heroGo() {
 
 // PRODUCT DETAIL
 function openPD(id) {
-    const p=[...MOCK,...allProds].find(x=>x.id==id);
+    const p=allProds.find(x=>x.id==id);
     if(!p)return;
     const m=document.getElementById('pdModal');
     m.innerHTML=`
         <button class="modal-close" style="position:absolute;top:16px;right:16px;z-index:10;background:rgba(0,0,0,0.5);" onclick="closePD()">✕</button>
-        <div class="pd-hero">${p.main_image?`<img src="${API}${p.main_image}" alt="${p.title}">`:`<span>${p.emoji||'🛠'}</span>`}</div>
+        <div class="pd-hero">${p.main_image?`<img src="${API}${p.main_image}" alt="${p.title}">`:`<span>🛠</span>`}</div>
         <div class="pd-body">
             <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-                <span style="background:rgba(124,108,252,0.12);color:var(--accent2);padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700;">${p.cat||'Xizmat'}</span>
+                <span style="background:rgba(124,108,252,0.12);color:var(--accent2);padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700;">Xizmat</span>
                 <span style="background:rgba(255,255,255,0.05);color:var(--text2);padding:4px 12px;border-radius:100px;font-size:11px;">👁 ${Number(p.views||p.views_count||0).toLocaleString('uz')} ko'rilgan</span>
             </div>
             <div class="pd-title">${p.title}</div>
             <div class="seller-row" style="margin-bottom:20px;">
-                <div class="avatar" style="width:32px;height:32px;font-size:12px;">${(p.seller||'?')[0].toUpperCase()}</div>
-                <span style="font-size:13px;font-weight:600;">${p.seller||'Noma\'lum'}</span>
+                <div class="avatar" style="width:32px;height:32px;font-size:12px;">${(p.seller_username||p.seller||'?')[0].toUpperCase()}</div>
+                <span style="font-size:13px;font-weight:600;">${p.seller_username||p.seller||'Noma\'lum'}</span>
                 <div class="dot-online"></div>
                 <span style="font-size:12px;color:var(--green);margin-left:4px;">Online</span>
             </div>
-            <p class="pd-desc">${p.desc||p.description||p.full_description||'Batafsil tavsif yo\'q.'}</p>
+            <p class="pd-desc">${p.description||p.full_description||'Batafsil tavsif yo\'q.'}</p>
             <div class="pd-pkg">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div>
@@ -1103,9 +1105,12 @@ function updateNav(){
     const navR=document.getElementById('navRight');
     if(token){
         const init=(user?.username||user?.email||'U')[0].toUpperCase();
+        const photoUrl = user?.photo ? `${API}${user.photo}` : null;
         navR.innerHTML=`
             <div class="user-menu">
-                <button class="avatar-btn" onclick="toggleDrop()">${init}</button>
+                <button class="avatar-btn" onclick="toggleDrop()">
+                    ${photoUrl ? `<img src="${photoUrl}" />` : init}
+                </button>
                 <div class="dropdown" id="userDrop">
                     <a class="dd-item" href="#" onclick="showPage('profile-page');closeDrop();return false;">👤 Profilim</a>
                     <a class="dd-item" href="#" onclick="showPage('sell-page');closeDrop();return false;">➕ Xizmat qo'shish</a>
@@ -1128,11 +1133,34 @@ document.addEventListener('click',e=>{if(!e.target.closest('.user-menu'))closeDr
 // PROFILE
 async function loadProfile(){
     if(!token){showPage('home-page');openAuth('login');return;}
-    document.getElementById('profAv').textContent=(user?.username||user?.email||'U')[0].toUpperCase();
+
+    // Update user info
+    const photoUrl = user?.photo ? `${API}${user.photo}` : null;
+    const profAvEl = document.getElementById('profAv');
+    profAvEl.innerHTML = photoUrl
+        ? `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;" />`
+        : (user?.username||user?.email||'U')[0].toUpperCase();
+
     document.getElementById('profName').textContent=user?.username||'Foydalanuvchi';
     document.getElementById('profRole').textContent=user?.auth_role||'Mijoz';
     document.getElementById('profEmail').textContent=user?.email||'—';
-    document.getElementById('editEmail').value=user?.email||'';
+    document.getElementById('editFirstName').value=user?.first_name||'';
+    document.getElementById('editLastName').value=user?.last_name||'';
+    document.getElementById('editUsername').value=user?.username||'';
+
+    // Photo preview
+    const photoPreviewInit = document.getElementById('photoInitial');
+    const photoPreviewImg = document.getElementById('photoImg');
+    if(photoUrl) {
+        photoPreviewImg.src = photoUrl;
+        photoPreviewImg.style.display = 'block';
+        photoPreviewInit.style.display = 'none';
+    } else {
+        photoPreviewInit.textContent = (user?.username||user?.email||'U')[0].toUpperCase();
+        photoPreviewImg.style.display = 'none';
+        photoPreviewInit.style.display = 'flex';
+    }
+
     try{
         const r=await fetch(`${API}/products/product-seller-list/`,{headers:{'Authorization':`Bearer ${token}`}});
         if(r.ok){
@@ -1152,7 +1180,140 @@ async function loadProfile(){
     }catch(e){document.getElementById('myProds').innerHTML='<p style="color:var(--text2);font-size:14px;">Yuklab bo\'lmadi</p>';}
 }
 
-function saveProf(){toast('Profil saqlandi ✓','ok');}
+async function saveProf(){
+    if(!token){openAuth('login');return;}
+    const firstName = document.getElementById('editFirstName').value.trim();
+    const lastName = document.getElementById('editLastName').value.trim();
+    const username = document.getElementById('editUsername').value.trim();
+    const password = document.getElementById('editPass').value;
+    const confPassword = document.getElementById('editConfPass').value;
+    const errEl = document.getElementById('profErr');
+    errEl.innerHTML = '';
+
+    if(!firstName || !lastName || !username){
+        errEl.innerHTML = '<div class="form-err">Barcha maydonlarni to\'ldiring</div>';
+        return;
+    }
+
+    if(password && password !== confPassword){
+        errEl.innerHTML = '<div class="form-err">Parollar mos emas</div>';
+        return;
+    }
+
+    try{
+        const body = {first_name: firstName, last_name: lastName, username};
+        if(password) {
+            body.password = password;
+            body.conf_password = confPassword;
+        }
+
+        const r = await fetch(`${API}/users/user-change-info/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(body)
+        });
+
+        const d = await r.json();
+        if(r.ok){
+            user = {...user, first_name: firstName, last_name: lastName, username};
+            localStorage.setItem('user_data', JSON.stringify(user));
+            toast('Profil muvaffaqiyatli yangilandi! ✓', 'ok');
+            updateNav();
+            loadProfile();
+        } else {
+            const errorMsg = d.message || Object.values(d).flat().join(', ') || 'Xatolik yuz berdi';
+            errEl.innerHTML = `<div class="form-err">${errorMsg}</div>`;
+        }
+    }catch(e){
+        errEl.innerHTML = '<div class="form-err">Server bilan ulanib bo\'lmadi</div>';
+    }
+}
+
+function handlePhotoSelect() {
+    const input = document.getElementById('photoInput');
+    const file = input.files[0];
+    const errEl = document.getElementById('photoErr');
+    errEl.innerHTML = '';
+
+    if(!file) return;
+
+    // Validate file type
+    if(!file.type.startsWith('image/')) {
+        errEl.innerHTML = '<div class="form-err">Faqat rasm fayllarini tanlang</div>';
+        input.value = '';
+        return;
+    }
+
+    // Validate file size (max 5MB)
+    if(file.size > 5 * 1024 * 1024) {
+        errEl.innerHTML = '<div class="form-err">Rasm hajmi 5MB dan kichik bo\'lishi kerak</div>';
+        input.value = '';
+        return;
+    }
+
+    selectedPhoto = file;
+
+    // Preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const photoImg = document.getElementById('photoImg');
+        const photoInitial = document.getElementById('photoInitial');
+        photoImg.src = e.target.result;
+        photoImg.style.display = 'block';
+        photoInitial.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+
+    // Show upload button
+    document.getElementById('uploadPhotoBtn').style.display = 'inline-flex';
+}
+
+async function uploadPhoto() {
+    if(!selectedPhoto || !token) return;
+
+    const btn = document.getElementById('uploadPhotoBtn');
+    const errEl = document.getElementById('photoErr');
+    errEl.innerHTML = '';
+
+    btn.textContent = 'Yuklanmoqda...';
+    btn.disabled = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('photo', selectedPhoto);
+
+        const r = await fetch(`${API}/users/user-change-photo/`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        const d = await r.json();
+        if(r.ok) {
+            user = {...user, photo: d.photo};
+            localStorage.setItem('user_data', JSON.stringify(user));
+            toast('Profil rasmi muvaffaqiyatli yangilandi! ✓', 'ok');
+            updateNav();
+            loadProfile();
+            btn.style.display = 'none';
+            selectedPhoto = null;
+            document.getElementById('photoInput').value = '';
+        } else {
+            const errorMsg = d.message || d.photo?.[0] || 'Xatolik yuz berdi';
+            errEl.innerHTML = `<div class="form-err">${errorMsg}</div>`;
+        }
+    } catch(e) {
+        errEl.innerHTML = '<div class="form-err">Server bilan ulanib bo\'lmadi</div>';
+    }
+
+    btn.textContent = 'Yuklash';
+    btn.disabled = false;
+}
 
 async function publishProd(){
     if(!token){openAuth('login');return;}
@@ -1190,17 +1351,26 @@ async function loadFromAPI(){
             allProds=data.map(p=>({
                 id:p.id,title:p.title,
                 seller:p.seller||'Noma\'lum',
+                seller_username:p.seller_username,
                 price:parseFloat(p.price_standard)||0,
                 delivery:p.delivery_time_standard||1,
                 rating:p.average_rating||0,
                 views:p.views_count||0,
-                emoji:'🛠',cat:'programming',
+                cat:'programming',
                 main_image:p.main_image,
-                desc:p.description,
+                description:p.description,
+                full_description:p.full_description,
+                price_standard:p.price_standard,
+                delivery_time_standard:p.delivery_time_standard,
+                views_count:p.views_count,
+                average_rating:p.average_rating,
             }));
             renderHomeProds(allProds);
+            // Update categories count
+            CATS.forEach(cat => cat.count = allProds.length);
+            renderCats();
         }
-    }catch(e){}
+    }catch(e){console.error('API error:',e);}
 }
 
 // TOAST
@@ -1217,8 +1387,6 @@ function toast(msg,type='ok'){
 document.addEventListener('DOMContentLoaded',()=>{
     updateNav();
     renderCats();
-    renderHomeProds(MOCK);
-    renderFLs();
     setTimeout(()=>{
         countUp(document.getElementById('sn1'),1200,'+');
         countUp(document.getElementById('sn2'),5400,'+');
