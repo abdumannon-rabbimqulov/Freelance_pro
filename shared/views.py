@@ -45,3 +45,6 @@ def send_email(user):
         return True
     except Exception as e:
         raise ValidationError({'message':f" Email yuborishda xatolik: {e}"})
+
+def home_view(request):
+    return render(request, 'index.html')
