@@ -2,9 +2,10 @@
 Bu platforma frilanserlar va mijozlarni bog'lovchi, chat funksiyasiga ega bo'lgan Django backend loyihasi.
 
 # Mac
-python -m venv venv
-source venv/bin/activate  
-venv\Scripts\activate 
+1. python -m venv venv
+2. source venv/bin/activate  
+
+venv\Scripts\activate
 
 pip install -r requirements.txt
 
