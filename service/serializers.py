@@ -19,13 +19,18 @@ class ProjectBoardSerializers(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     class Meta:
         model=ProjectBoard
-        fields=('title','description','full_description',
-                'price_standard','published_at','is_published',
+        fields=('id', 'seller', 'title', 'category', 'description', 'full_description',
+                'price_standard', 'published_at', 'is_published',
                 'delivery_standard', 'revisions_standard',
                 'main_image', 'views_count', 'orders_count',
                 'is_active', 'created_at', 'average_rating', 'reviews'
                 )
         read_only_fields = ['views_count', 'orders_count', 'created_at']
+        extra_kwargs = {
+            'main_image': {'required': False},
+            'delivery_standard': {'required': False},
+            'revisions_standard': {'required': False},
+        }
 
     def get_average_rating(self, obj):
         reviews = obj.reviews.all()

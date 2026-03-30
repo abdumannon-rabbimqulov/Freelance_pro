@@ -1,17 +1,46 @@
-
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .models import ProjectBoard, ReviewBoard
 from .serializers import ProjectBoardSerializers, ReviewBoardSerializer
 from shared.permissions import IsProfileComplete, IsProfileCompleteOrReadOnly
 
 
 class ProjectListCreateView(generics.ListCreateAPIView):
-    queryset = ProjectBoard.objects.filter(is_published=True, is_active=True)
+    queryset = ProjectBoard.objects.filter(is_active=True)
     serializer_class = ProjectBoardSerializers
     permission_classes = [IsProfileCompleteOrReadOnly]
 
     def perform_create(self, serializer):
-        serializer.save(seller=self.request.user)
+        serializer.save(seller=self.request.user, is_active=False)
+
+
+class MyProjectListView(generics.ListAPIView):
+    serializer_class = ProjectBoardSerializers
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ProjectBoard.objects.filter(seller=self.request.user)
+
+
+class AdminProjectListView(generics.ListAPIView):
+    queryset = ProjectBoard.objects.filter(is_active=False)
+    serializer_class = ProjectBoardSerializers
+    permission_classes = [IsAdminUser]
+
+
+class ApproveProjectView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            project = ProjectBoard.objects.get(pk=pk)
+            project.is_active = True
+            project.save()
+            return Response({"message": "Loyiha muvaffaqiyatli tasdiqlandi!"}, status=status.HTTP_200_OK)
+        except ProjectBoard.DoesNotExist:
+            return Response({"error": "Loyiha topilmadi!"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):

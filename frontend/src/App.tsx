@@ -9,6 +9,7 @@ import ProductDetail from './pages/ProductDetail';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import ChatDashboard from './pages/Chat';
+import CreateProject from './pages/CreateProject';
 import { useContext } from 'react';
 import { AuthContext } from './context/AuthContext';
 
@@ -45,6 +46,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <CreateProduct />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="create-project" 
+            element={
+              <ProtectedRoute>
+                <CreateProject />
               </ProtectedRoute>
             } 
           />

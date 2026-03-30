@@ -16,8 +16,8 @@ class ProjectBoard(models.Model):
 
     category = models.ForeignKey(
         Category,
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
+        null=False,
         related_name='project'
     )
 
@@ -37,7 +37,7 @@ class ProjectBoard(models.Model):
     orders_count = models.IntegerField(default=0)
 
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     is_published = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)

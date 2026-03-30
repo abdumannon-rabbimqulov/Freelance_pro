@@ -145,7 +145,8 @@ class LoginSerializers(TokenObtainSerializer):
             "user": {
                 "username": user.username,
                 "email": user.email,
-                "is_staff": user.is_staff
+                "is_staff": user.is_staff,
+                "auth_role": user.auth_role
             }
         }
 
