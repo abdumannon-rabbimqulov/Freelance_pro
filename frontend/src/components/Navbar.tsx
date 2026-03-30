@@ -37,7 +37,7 @@ const Navbar = () => {
                 + Xizmat Qo'shish
               </Link>
               <Link to="/profile" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <User size={18} /> {user.username}
+                <User size={18} /> {user.username || 'Profil'}
               </Link>
               <Link to="/chat" className="nav-link">Chat</Link>
               <button onClick={() => { logout(); navigate('/'); }} className="btn btn-primary" style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--primary)', color: '#fff' }}>
@@ -68,7 +68,7 @@ const Navbar = () => {
             <>
               {user.is_staff && <Link to="/admin-dashboard" className="nav-link">Admin Panel</Link>}
               <Link to="/create-product" className="btn btn-primary" style={{ width: '100%', marginTop: '5px' }}>+ Xizmat Qo'shish</Link>
-              <Link to="/profile" className="nav-link"><User size={18} /> Profil ({user.username})</Link>
+              <Link to="/profile" className="nav-link"><User size={18} /> Profil ({user.username || 'Mening Profilim'})</Link>
               <Link to="/chat" className="nav-link">Chat</Link>
               <button onClick={() => { logout(); navigate('/'); }} className="btn btn-primary" style={{ width: '100%', marginTop: '5px', background: 'transparent', border: '1px solid var(--primary)', color: '#fff' }}>Logout</button>
             </>

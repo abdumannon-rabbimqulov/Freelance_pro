@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CreateProduct from './pages/CreateProduct';
 import ProductDetail from './pages/ProductDetail';
+import Profile from './pages/Profile';
+import AdminDashboard from './pages/AdminDashboard';
 import ChatDashboard from './pages/Chat';
 import { useContext } from 'react';
 import { AuthContext } from './context/AuthContext';
@@ -28,6 +30,8 @@ const App = () => {
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="product/:id" element={<ProductDetail />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="admin-dashboard" element={<AdminDashboard />} />
           <Route 
             path="chat" 
             element={

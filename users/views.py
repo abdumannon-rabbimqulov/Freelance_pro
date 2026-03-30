@@ -70,10 +70,10 @@ class UserChangeInfoView(UpdateAPIView):
         serializer=self.get_serializer(self.get_object(),data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        response={
-                "status": status.HTTP_201_CREATED,
-                "message": "Siz muvaffaqiyatli ro'yxatdan o'tdiz!"
-            },
+        response = {
+            "status": status.HTTP_200_OK,
+            "message": "Ma'lumotlaringiz muvaffaqiyatli yangilandi!"
+        }
         return Response(response)
 
 class UserChangePhotoView(UpdateAPIView):
@@ -89,9 +89,9 @@ class UserChangePhotoView(UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         response = {
-            "status": status.HTTP_201_CREATED,
-            "message": "Siz muvaffaqiyatli ro'yxatdan o'tdiz!"
-        },
+            "status": status.HTTP_200_OK,
+            "message": "Profilingiz rasmi muvaffaqiyatli yangilandi!"
+        }
         return Response(response)
 
 
@@ -185,3 +185,11 @@ class ResetPasswordView(APIView):
             'message':"Siz muffaqiyatli parolizni tikladiz",
         }
         return Response(response)
+
+
+class MeView(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    def get(self, request):
+        serializer = CustomUserSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)

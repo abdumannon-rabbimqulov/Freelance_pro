@@ -13,5 +13,6 @@ urlpatterns=[
     path('forgot-password/',ForgotPasswordView.as_view()),
     path('reset-code/',ResetPasswordCodeView.as_view()),
     path('reset-password/',ResetPasswordView.as_view()),
+    path('me/', MeView.as_view(), name='users-me'),
 ]
 

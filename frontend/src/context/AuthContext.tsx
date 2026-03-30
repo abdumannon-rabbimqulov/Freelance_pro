@@ -6,6 +6,9 @@ interface User {
   user_id?: string;
   username: string;
   email?: string;
+  first_name?: string;
+  last_name?: string;
+  photo?: string;
   is_staff?: boolean;
 }
 
@@ -14,6 +17,7 @@ interface AuthContextType {
   token: string | null;
   login: (access: string, refresh: string, userData?: any) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -21,11 +25,29 @@ export const AuthContext = createContext<AuthContextType>({
   token: null,
   login: () => {},
   logout: () => {},
+  refreshUser: async () => {},
 });
+
+import axios from 'axios';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+
+  const refreshUser = async () => {
+    const access = localStorage.getItem('access');
+    if (access) {
+      try {
+        const res = await axios.get('http://127.0.0.1:8000/users/me/', {
+          headers: { Authorization: `Bearer ${access}` }
+        });
+        localStorage.setItem('user_data', JSON.stringify(res.data));
+        setUser(res.data);
+      } catch (err) {
+        console.error("User ma'lumotlarini yangilashda xatolik:", err);
+      }
+    }
+  };
 
   useEffect(() => {
     // Sahifa yuklanganda localstoragedan tokenni olib foydalanuvchini tiklaymiz
@@ -73,7 +95,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

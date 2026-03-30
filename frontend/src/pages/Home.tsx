@@ -1,15 +1,8 @@
 import { ArrowRight, Code, PenTool, Video, Search, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-
-const staticCategories = [
-  { name: 'Development & IT', icon: <Code size={24} />, color: 'var(--accent-primary)', jobs: 1240 },
-  { name: 'Design & Creative', icon: <PenTool size={24} />, color: '#ec4899', jobs: 843 },
-  { name: 'Video & Animation', icon: <Video size={24} />, color: '#8b5cf6', jobs: 423 },
-  { name: 'Digital Marketing', icon: <Search size={24} />, color: '#10b981', jobs: 512 }
-];
 
 const Home = () => {
   const [featuredServices, setFeaturedServices] = useState<any[]>([]);
@@ -100,7 +93,6 @@ const Home = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
             {dbCategories.map((cat, idx) => {
               // Har bir kategoriya uchn maxsus default icon va color tuzamiz
-              const isTech = cat.name.toLowerCase().includes('react') || cat.name.toLowerCase().includes('django') || cat.name.toLowerCase().includes('app') || cat.name.toLowerCase().includes('data');
               const isDesign = cat.name.toLowerCase().includes('design') || cat.name.toLowerCase().includes('video');
               const isMarketing = cat.name.toLowerCase().includes('marketing') || cat.name.toLowerCase().includes('seo') || cat.name.toLowerCase().includes('copy');
               
