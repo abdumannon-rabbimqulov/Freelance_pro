@@ -10,7 +10,7 @@ Function views
 Class-based views
     1. Add an import:  from other_app.views import Home
     2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
+Including another URL conf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
@@ -23,7 +23,11 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path('users/',include('users.urls')),
     path('products/',include('products.urls')),
+    path('service/',include('service.urls')),
+    path('orders/',include('orders.urls')),
+    path('notifications/',include('notifications.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path('', SpectacularSwaggerView.as_view(url_name='schema'), name='home'),
 ]

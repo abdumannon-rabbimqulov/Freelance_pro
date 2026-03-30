@@ -3,22 +3,26 @@ from .models import ProductImage,Product
 from .serializers import *
 from rest_framework import viewsets, permissions,status
 from .services import generate_image_vector
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView,CreateAPIView
 import numpy as np
 from django.db import models
-from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework.permissions import AllowAny,IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from shared.permissions import IsProfileComplete, IsProfileCompleteOrReadOnly
+from notifications.models import Notification
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializers
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsProfileCompleteOrReadOnly]
     lookup_field = 'slug'
 
     def perform_create(self, serializer):
-        product=serializer.save(seller=self.request.user)
+        product=serializer.save(seller=self.request.user, is_active=False)
         if product.main_image:
             try:
                 vector = generate_image_vector(product.main_image.path)
@@ -26,7 +30,19 @@ class ProductViewSet(viewsets.ModelViewSet):
                     product.image_vector = vector
                     product.save(update_fields=['image_vector'])
             except Exception as e:
-                raise ValidationError({"message":f"Rasm vektorlashda xatolik: {e}"})
+                print(f"Rasm vektorlashda xatolik: {e}")
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Product.objects.all()
+        return Product.objects.filter(seller=user)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.seller != request.user and not request.user.is_staff:
+            return Response({"error": "Sizda bu mahsulotni o'chirish huquqi yo'q"}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
 
 
@@ -70,12 +86,13 @@ class SimilarProductListView(APIView):
         serializer = ProductSerializers(queryset, many=True)
         return Response(serializer.data)
 
-class ProductListView(ListAPIView):
+
+
+
+class CategoryListView(ListAPIView):
     permission_classes = (AllowAny, )
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializers
-
-
+    queryset = Category.objects.filter(is_active=True)
+    serializer_class = CategorySerializer
 
 class ProductDetailView(APIView):
     permission_classes = (AllowAny, )
@@ -101,7 +118,6 @@ class ProductDetailView(APIView):
         except Exception as e:
             return Response(
                 {"error": f"Siz bu mahsulotga allaqachon sharh qoldirgansiz."},
-                status=status.HTTP_400_BAD_REQUEST
             )
         else:
             response={
@@ -110,3 +126,160 @@ class ProductDetailView(APIView):
                 'data':serializer.data
             }
         return Response(response)
+
+
+
+class ProductList(ListAPIView):
+    """Bosh sahifa uchn faqat Tasdiqlangan (is_active=True) xizmatlar ro'yxati"""
+    permission_classes = (AllowAny,)
+    serializer_class = ProductSerializers
+
+    def get_queryset(self):
+        return Product.objects.filter(is_active=True).order_by('-created_at')
+
+
+class AdminProductList(ListAPIView):
+    """Adminlar uchn Tasdiq kutilayotgan (is_active=False) xizmatlar ro'yxati"""
+    permission_classes = (IsAdminUser,)
+    serializer_class = ProductSerializers
+
+    def get_queryset(self):
+        return Product.objects.filter(is_active=False).order_by('-created_at')
+
+
+class ApproveProduct(APIView):
+    """Admin mahsulotni tasdiqlashi (is_active=True qilish) uchn API"""
+    permission_classes = (IsAdminUser,)
+
+    def post(self, request, pk):
+        product = get_object_or_404(Product, pk=pk)
+        product.is_active = True
+        product.save()
+        return Response({"message": "Mahsulot muvaffaqiyatli tasdiqlandi!"}, status=status.HTTP_200_OK)
+
+
+class SellerProductList(ListAPIView):
+    """Sotuvchining o'zi uchn barcha (Active/Inactive) xizmatlari ro'yxati"""
+    permission_classes = (IsProfileComplete,)
+    serializer_class = ProductSerializers
+
+    def get_queryset(self):
+        return Product.objects.filter(seller=self.request.user).order_by('-created_at')
+
+
+
+class MessageStart(APIView):
+    permission_classes = (IsProfileComplete, )
+
+    def post(self,request,pk):
+        user=self.request.user
+        serialiser=MessageStartSerializers(data=request.data)
+        serialiser.is_valid(raise_exception=True)
+        product=get_object_or_404(Product,pk=pk)
+        chat = Chat.objects.filter(participants=user).filter(participants__id=product.seller.id).first()
+        if not chat:
+            chat=Chat.objects.create()
+            chat.participants.add(user,product.seller)
+
+        serialiser.save(
+            user=user,
+            chat=chat,
+            product=product
+        )
+
+        # Yangi talab: Xabar yozilganda unga xabarnoma tushishi va Real-time yuborilishi kerak
+        if user != product.seller:
+            notification = Notification.objects.create(
+                user=product.seller,
+                title="Yangi xabar keldi",
+                message=f"{user.username} sizning {product.title} mahsulotingiz yuzasidan xabar yozdi."
+            )
+            # Socket orqali real-time uzatish
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{product.seller.id}",
+                {
+                    "type": "send_notification",
+                    "title": notification.title,
+                    "message": notification.message
+                }
+            )
+
+        response={
+            'status':status.HTTP_200_OK,
+            'message':'xabariz  yuborildi'
+        }
+        return Response(response)
+
+
+
+class ChatListView(APIView):
+    permission_classes = (IsProfileComplete, )
+
+    def get(self, request):
+        user = request.user
+        chats = Chat.objects.filter(participants=user).order_by('-created_at')
+
+        serializer = ChatListSerializer(chats, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ChatDetailView(APIView):
+    permission_classes = (IsProfileComplete, )
+
+    def get(self, request, pk):
+        user = request.user
+        chat = get_object_or_404(Chat, pk=pk, participants=user)
+        messages = Messages.objects.filter(chat=chat).order_by('created_at')
+        
+        # Maxsus tuzilma bilan qaytaramiz (O'ziniki yoki birovniki ekanligini bildirish uchn)
+        data = []
+        for msg in messages:
+            data.append({
+                "id": msg.id,
+                "text": msg.text,
+                "is_mine": msg.user == user,
+                "created_at": msg.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            })
+        
+        return Response(data, status=status.HTTP_200_OK)
+
+    def post(self, request, pk):
+        user = request.user
+        chat = get_object_or_404(Chat, pk=pk, participants=user)
+        text = request.data.get('text')
+        
+        if not text:
+            raise ValidationError({"error": "Xabar matni bo'sh bo'lishi mumkin emas."})
+            
+        msg = Messages.objects.create(
+            user=user,
+            chat=chat,
+            text=text
+        )
+        
+        # Websocket orqali chatdagi ikkinchi shaxsga uzatish
+        other_user = chat.get_recipient(user)
+        if other_user:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{other_user.id}",
+                {
+                    "type": "send_notification",
+                    "title": f"{user.username} dan yangi xabar",
+                    "message": text
+                }
+            )
+
+        return Response({
+            "id": msg.id,
+            "text": msg.text,
+            "is_mine": True,
+            "created_at": msg.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        }, status=status.HTTP_201_CREATED)
+
+
+
+
+
+

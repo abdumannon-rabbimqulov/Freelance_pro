@@ -13,6 +13,12 @@ from django.db.models import Q
 
 
 
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'photo', 'auth_role', 'is_staff')
+
+
 class SingUpSerializers(serializers.ModelSerializer):
     id=serializers.UUIDField(read_only=True)
     auth_role=serializers.CharField(read_only=True)
@@ -70,12 +76,13 @@ class UserChangeInfoSerializers(serializers.Serializer):
 
 
     def validate_username(self,username):
-        user_query = CustomUser.objects.filter(username=username)
+        user = self.context.get('request').user
+        user_query = CustomUser.objects.filter(username=username).exclude(id=user.id)
 
         if user_query.exists():
             raise ValidationError({'message': 'Bu username band'})
         if len(username) < 6:
-            raise ValidationError({'message': 'Username kamida 7 belgidan iborat bolishi kerek'})
+            raise ValidationError({'message': 'Username kamida 6 belgidan iborat bolishi kerek'})
         elif not username.isalnum():
             raise ValidationError({'message': 'username da ortiqcha belgi bolmasligi kerak '})
         elif username[0].isdigit():
@@ -137,7 +144,9 @@ class LoginSerializers(TokenObtainSerializer):
             "access": user.token()['access'],
             "user": {
                 "username": user.username,
-                "email": user.email
+                "email": user.email,
+                "is_staff": user.is_staff,
+                "auth_role": user.auth_role
             }
         }
 
