@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny,IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-from shared.permissions import IsProfileComplete, IsProfileCompleteOrReadOnly
+from shared.permissions import IsProfileComplete, IsProfileCompleteOrReadOnly, IsOwnerOrReadOnly
 from notifications.models import Notification
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -23,6 +23,12 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         product=serializer.save(seller=self.request.user, is_active=False)
+        
+        # Galereya rasmlarini (max 5) saqlash
+        images = self.request.FILES.getlist('images')
+        for img in images[:5]:
+            ProductImage.objects.create(product=product, image=img)
+
         if product.main_image:
             try:
                 vector = generate_image_vector(product.main_image.path)
@@ -95,17 +101,41 @@ class CategoryListView(ListAPIView):
     serializer_class = CategorySerializer
 
 class ProductDetailView(APIView):
-    permission_classes = (AllowAny, )
-    def get(self,request,pk):
-        product=get_object_or_404(Product,id=pk)
+    permission_classes = [IsProfileCompleteOrReadOnly, IsOwnerOrReadOnly]
+
+    def get(self, request, pk):
+        product = get_object_or_404(Product, id=pk)
         product.increment_views()
-        serializer=ProductSerializers(product)
-        response={
-            'status':status.HTTP_200_OK,
-            'message':'product',
-            'data':serializer.data
+        serializer = ProductSerializers(product)
+        response = {
+            'status': status.HTTP_200_OK,
+            'message': 'product',
+            'data': serializer.data
         }
         return Response(response)
+
+    def put(self, request, pk):
+        product = get_object_or_404(Product, id=pk)
+        self.check_object_permissions(request, product)
+        
+        serializer = ProductSerializers(product, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'status': status.HTTP_200_OK,
+                'message': 'Xizmat muvaffaqiyatli yangilandi',
+                'data': serializer.data
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        product = get_object_or_404(Product, id=pk)
+        self.check_object_permissions(request, product)
+        product.delete()
+        return Response({
+            'status': status.HTTP_204_NO_CONTENT,
+            'message': 'Xizmat muvaffaqiyatli o\'chirildi'
+        }, status=status.HTTP_204_NO_CONTENT)
     def post(self,request,pk):
         product = get_object_or_404(Product, pk=pk)
         user=self.request.user
@@ -135,7 +165,18 @@ class ProductList(ListAPIView):
     serializer_class = ProductSerializers
 
     def get_queryset(self):
-        return Product.objects.filter(is_active=True).order_by('-created_at')
+        user = self.request.user
+        queryset = Product.objects.filter(is_active=True)
+        
+        # Agar foydalanuvchi kirgan bo'lsa, o'zining hali tasdiqlanmagan ishlarini ham qo'shib ko'rsatamiz
+        if user.is_authenticated:
+            queryset = Product.objects.filter(models.Q(is_active=True) | models.Q(seller=user))
+            
+        queryset = queryset.order_by('-created_at')
+        category_id = self.request.query_params.get('category')
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+        return queryset
 
 
 class AdminProductList(ListAPIView):

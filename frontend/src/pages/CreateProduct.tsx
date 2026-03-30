@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -20,11 +20,11 @@ const CreateProduct = () => {
     category: '', // API orqali olamiz
   });
 
-  const [image, setImage] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
 
   // Kategoriya ro'yxatini yuklash
-  React.useEffect(() => {
+  useEffect(() => {
     axios.get('http://127.0.0.1:8000/products/categories/')
       .then(res => {
         setCategories(res.data);
@@ -40,23 +40,40 @@ const CreateProduct = () => {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImage(file);
-      setPreview(URL.createObjectURL(file));
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      const totalImages = [...images, ...selectedFiles].slice(0, 5); // Maks 5 ta
+      
+      setImages(totalImages);
+      
+      const newPreviews = totalImages.map(file => URL.createObjectURL(file));
+      setPreviews(newPreviews);
+      
+      if (selectedFiles.length + images.length > 5) {
+        toast.info("Maksimal 5 ta rasm yuklash mumkin.");
+      }
     }
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
+
+    const newPreviews = [...previews];
+    newPreviews.splice(index, 1);
+    setPreviews(newPreviews);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!image) {
-      toast.warning("Iltimos xizmatingiz uchun Asosiy Rasm yuklang!");
+    if (images.length === 0) {
+      toast.warning("Iltimos xizmatingiz uchun kamida 1 ta rasm yuklang!");
       return;
     }
 
     setLoading(true);
-    // Vektorlash vaqtini inobatga olib maxsus Toast ishlatamiz
-    const toastId = toast.loading("Xizmat yaratilmoqda, A.I. rasmni tahlil qilmoqda...");
+    const toastId = toast.loading("Xizmat yaratilmoqda, A.I. rasmlarni tahlil qilmoqda...");
 
     try {
       const token = localStorage.getItem('access');
@@ -64,7 +81,14 @@ const CreateProduct = () => {
       Object.entries(formData).forEach(([key, value]) => {
         data.append(key, value);
       });
-      data.append('main_image', image);
+      
+      // Birinchi rasm main_image bo'ladi
+      data.append('main_image', images[0]);
+      
+      // Qolganlari gallereya uchn
+      images.forEach((img) => {
+        data.append('images', img);
+      });
 
       await axios.post('http://127.0.0.1:8000/products/products/', data, {
         headers: {
@@ -81,7 +105,6 @@ const CreateProduct = () => {
          if (error.response.data.message) {
             errorMsg = error.response.data.message;
          } else {
-            // DRF Validation Errorni formatlash (Masalan: category: "Object doesn't exist")
             const firstKey = Object.keys(error.response.data)[0];
             const firstError = error.response.data[firstKey];
             errorMsg = `${firstKey}: ${Array.isArray(firstError) ? firstError[0] : firstError}`;
@@ -98,7 +121,7 @@ const CreateProduct = () => {
     <div className="auth-container py-5" style={{ minHeight: '100vh', alignItems: 'flex-start' }}>
       <div className="auth-card glass-panel" style={{ maxWidth: '600px', width: '100%', marginTop: '40px' }}>
         <h2 className="auth-title">Yangi Xizmat (Gig)</h2>
-        <p className="auth-subtitle">Mahoratingizni mijozlarga soting</p>
+        <p className="auth-subtitle">Mahoratingizni mijozlarga soting (Maks 5 ta rasm)</p>
 
         <form onSubmit={handleSubmit} className="auth-form mt-4">
           <div className="input-group">
@@ -160,40 +183,38 @@ const CreateProduct = () => {
           </div>
 
           <div className="input-group mt-2">
-            <label>Asosiy Rasm (Banner)</label>
+            <label>Gallereya Rasmlari (Maks 5 ta, birinchisi asosiy bo'ladi)</label>
             <div 
               style={{
-                border: '2px dashed var(--border-color)',
-                borderRadius: '16px',
-                padding: '30px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                background: 'rgba(255,255,255,0.02)',
-                position: 'relative'
+                border: '2px dashed var(--border-color)', borderRadius: '16px', padding: '30px',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', background: 'rgba(255,255,255,0.02)', position: 'relative', marginBottom: '15px'
               }}
             >
               <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleImageChange}
+                type="file" multiple accept="image/*" onChange={handleImageChange}
                 style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
               />
-              {preview ? (
-                <img src={preview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
-              ) : (
-                <>
-                  <Upload size={36} style={{ color: 'var(--primary)', marginBottom: '10px' }} />
-                  <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Rasmni tanlang yoxud shu yerga torting</p>
-                </>
-              )}
+              <Upload size={36} style={{ color: 'var(--primary)', marginBottom: '10px' }} />
+              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Rasmlarni tanlang ({images.length}/5)</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '10px' }}>
+               {previews.map((src, idx) => (
+                 <div key={idx} style={{ position: 'relative', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+                   <img src={src} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                   <button 
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(255,0,0,0.7)', color: '#fff', border: 'none', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px' }}
+                   >X</button>
+                 </div>
+               ))}
             </div>
           </div>
 
           <button disabled={loading} type="submit" className="btn btn-primary auth-submit mt-4" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-            {loading ? <><Loader className="spin" size={20}/> Tahlil qilinmoqda...</> : "Saqlash va Chop etish"}
+            {loading ? <><Loader className="spin" size={20}/> Saqlanmoqda...</> : "Xizmatni Saqlash"}
           </button>
         </form>
       </div>

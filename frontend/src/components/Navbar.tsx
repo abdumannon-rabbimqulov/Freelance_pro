@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, User, LogOut } from 'lucide-react';
+import { Menu, X, Search, User, LogOut, Wallet, Settings, CreditCard } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import './Navbar.css';
 
@@ -28,10 +28,15 @@ const Navbar = () => {
           <Link to="/explore" className="nav-link">Explore</Link>
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              {user.is_staff && (
-                <Link to="/admin-dashboard" className="nav-link" style={{ color: 'var(--accent-secondary)', fontWeight: 'bold' }}>
-                  Admin Panel
-                </Link>
+              {user.auth_role === 'admin' && (
+                <>
+                  <Link to="/admin-payouts" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#10b981' }}>
+                    <CreditCard size={18} /> Moliya
+                  </Link>
+                  <Link to="/admin-settings" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Settings size={18} /> Sozlamalar
+                  </Link>
+                </>
               )}
               {user.auth_role === 'seller' ? (
                 <Link to="/create-product" className="btn btn-primary" style={{ padding: '8px 16px' }}>
@@ -42,10 +47,19 @@ const Navbar = () => {
                   + E'lon Berish
                 </Link>
               )}
-              <Link to="/profile" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <User size={18} /> {user.username || 'Profil'}
+              <Link to="/profile" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <User size={18} /> 
+                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600 }}>{user.username}</span>
+                  {(user.auth_role === 'seller' || user.auth_role === 'admin') && (
+                    <span style={{ fontSize: '11px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                      <Wallet size={10} /> ${user.balance || '0.00'}
+                    </span>
+                  )}
+                </div>
               </Link>
               <Link to="/chat" className="nav-link">Chat</Link>
+              <Link to="/orders" className="nav-link">Buyurtmalar</Link>
               <button onClick={() => { logout(); navigate('/'); }} className="btn btn-primary" style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--primary)', color: '#fff' }}>
                 <LogOut size={16} />
               </button>
@@ -72,15 +86,24 @@ const Navbar = () => {
           <Link to="/explore" className="nav-link">Explore</Link>
           {user ? (
             <>
-              {user.is_staff && <Link to="/admin-dashboard" className="nav-link">Admin Panel</Link>}
+              {user.auth_role === 'admin' && (
+                <>
+                  <Link to="/admin-payouts" className="nav-link" style={{ color: '#10b981' }}>Moliya (Payouts)</Link>
+                  <Link to="/admin-settings" className="nav-link">Platforma Sozlamalari</Link>
+                </>
+              )}
               {user.auth_role === 'seller' ? (
                 <Link to="/create-product" className="btn btn-primary" style={{ width: '100%', marginTop: '5px' }}>+ Xizmat Qo'shish</Link>
               ) : (
                 <Link to="/create-project" className="btn btn-primary" style={{ width: '100%', marginTop: '5px', background: 'var(--accent-secondary)' }}>+ E'lon Berish</Link>
               )}
-              <Link to="/profile" className="nav-link"><User size={18} /> Profil ({user.username || 'Mening Profilim'})</Link>
+              <Link to="/profile" className="nav-link" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span><User size={18} /> Profil ({user.username})</span>
+                {(user.auth_role === 'seller' || user.auth_role === 'admin') && <span style={{ color: '#10b981' }}>${user.balance || '0.00'}</span>}
+              </Link>
               <Link to="/chat" className="nav-link">Chat</Link>
-              <button onClick={() => { logout(); navigate('/'); }} className="btn btn-primary" style={{ width: '100%', marginTop: '5px', background: 'transparent', border: '1px solid var(--primary)', color: '#fff' }}>Logout</button>
+              <Link to="/orders" className="nav-link">Buyurtmalar</Link>
+              <button onClick={() => { logout(); navigate('/'); }} className="btn btn-primary" style={{ width: '100%', marginTop: '10px', background: 'transparent', border: '1px solid var(--primary)', color: '#fff' }}>Logout</button>
             </>
           ) : (
             <>

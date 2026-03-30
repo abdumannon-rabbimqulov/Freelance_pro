@@ -24,8 +24,6 @@ class ProjectBoard(models.Model):
     description = models.TextField()
     full_description = models.TextField()
 
-
-
     price_standard = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     delivery_standard = models.IntegerField(null=True, blank=True)
     revisions_standard = models.IntegerField(null=True, blank=True)
@@ -35,7 +33,6 @@ class ProjectBoard(models.Model):
 
     views_count = models.IntegerField(default=0)
     orders_count = models.IntegerField(default=0)
-
 
     is_active = models.BooleanField(default=False)
     is_published = models.BooleanField(default=False)
@@ -77,4 +74,20 @@ class ReviewBoard(models.Model):
         unique_together = ('product', 'user')
 
     def __str__(self):
-        return f"{self.user.username} - {self.product.name} - {self.rating}"
+        return f"{self.user.username} - {self.product.title} - {self.rating}"
+
+
+class ProjectImage(models.Model):
+    project = models.ForeignKey(
+        ProjectBoard,
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
+    image = models.ImageField(upload_to='projects/gallery/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.project.title} "

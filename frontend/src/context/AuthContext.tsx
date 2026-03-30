@@ -11,6 +11,7 @@ interface User {
   photo?: string;
   is_staff?: boolean;
   auth_role?: string;
+  balance?: number;
 }
 
 interface AuthContextType {

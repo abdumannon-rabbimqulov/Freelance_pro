@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { Star, Clock, RefreshCw, User, MessageCircle, ArrowLeft } from 'lucide-react';
+import { Star, Clock, RefreshCw, MessageCircle, ArrowLeft } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const ProductDetail = () => {
@@ -13,12 +13,13 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [startingChat, setStartingChat] = useState(false);
+  const [activeImage, setActiveImage] = useState<string>("");
 
   useEffect(() => {
-    // Backend API dan xizmatni batafsil o'qib kelish (Bu views ni 1 taga oshiradi)
     axios.get(`http://127.0.0.1:8000/products/product/${id}/`)
       .then(res => {
         setProduct(res.data.data);
+        setActiveImage(res.data.data.main_image);
       })
       .catch(err => {
         console.error("Xizmatni yuklashda xatolik:", err);
@@ -46,7 +47,6 @@ const ProductDetail = () => {
     setStartingChat(true);
     try {
       const token = localStorage.getItem('access');
-      // Backend api ni ishga tushirib Chat Room o'rnatamiz
       await axios.post(`http://127.0.0.1:8000/products/message-start/${id}/`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -58,6 +58,44 @@ const ProductDetail = () => {
       toast.error(msg);
     } finally {
       setStartingChat(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Haqiqatan ham ushbu xizmatni o'chirmoqchimisiz?")) return;
+    try {
+      const token = localStorage.getItem('access');
+      await axios.delete(`http://127.0.0.1:8000/products/product/${id}/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Xizmat o'chirildi");
+      navigate('/');
+    } catch (error) {
+      toast.error("O'chirishda xatolik");
+    }
+  };
+
+  const handleOrder = async () => {
+    if (!user) {
+        toast.warning("Buyurtma berish uchun tizimga kiring");
+        navigate('/login');
+        return;
+    }
+    const requirements = window.prompt("Iltimos, ish bo'yicha talablaringizni yozing:");
+    if (requirements === null) return;
+
+    try {
+      const token = localStorage.getItem('access');
+      await axios.post('http://127.0.0.1:8000/orders/orders/', {
+        product: product.id,
+        requirements: requirements
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Buyurtma muvaffaqiyatli qabul qilindi!");
+      navigate('/orders');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Xatolik yuz berdi");
     }
   };
 
@@ -77,7 +115,6 @@ const ProductDetail = () => {
 
         <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
           
-          {/* Chap Tomon: Asosiy Ma'lumot va Rasm */}
           <div style={{ flex: '1 1 60%', minWidth: '320px' }}>
             <h1 className="brand-font" style={{ fontSize: '36px', lineHeight: 1.2, marginBottom: '20px' }}>{product.title}</h1>
             
@@ -94,18 +131,40 @@ const ProductDetail = () => {
                </div>
             </div>
 
-            {/* Banner Rasm */}
-            <div style={{ width: '100%', borderRadius: '20px', overflow: 'hidden', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', aspectRatio: '16/9' }}>
-               {product.main_image ? (
-                  <img src={getImageUrl(product.main_image)} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-               ) : (
-                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#fff', fontSize: '24px' }}>
-                     Maxsus Xizmat 🎨
-                  </div>
-               )}
+            {/* Banner va Galereya */}
+            <div style={{ width: '100%', marginBottom: '20px' }}>
+              <div style={{ width: '100%', borderRadius: '20px', overflow: 'hidden', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', aspectRatio: '16/9', marginBottom: '15px' }}>
+                 {activeImage ? (
+                    <img src={getImageUrl(activeImage)} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                 ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#fff', fontSize: '24px' }}>
+                       Maxsus Xizmat 🎨
+                    </div>
+                 )}
+              </div>
+              
+              <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '10px' }}>
+                 {/* Asosiy rasm doim birinchi thumbnail bo'ladi */}
+                 <div 
+                    onClick={() => setActiveImage(product.main_image)}
+                    style={{ width: '80px', height: '60px', borderRadius: '8px', cursor: 'pointer', overflow: 'hidden', border: activeImage === product.main_image ? '2px solid var(--accent-primary)' : '1px solid var(--glass-border)' }}
+                 >
+                    <img src={getImageUrl(product.main_image)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                 </div>
+                 {/* Gallereyadagi qolgan rasmlar */}
+                 {product.images?.map((img: any) => (
+                    <div 
+                       key={img.id}
+                       onClick={() => setActiveImage(img.image)}
+                       style={{ width: '80px', height: '60px', borderRadius: '8px', cursor: 'pointer', overflow: 'hidden', border: activeImage === img.image ? '2px solid var(--accent-primary)' : '1px solid var(--glass-border)' }}
+                    >
+                       <img src={getImageUrl(img.image)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                 ))}
+              </div>
             </div>
 
-            <div style={{ marginTop: '40px' }}>
+            <div style={{ marginTop: '20px' }}>
                <h2 className="brand-font" style={{ fontSize: '24px', marginBottom: '20px' }}>Xizmat haqida to'liq ma'lumot</h2>
                <div className="glass-panel" style={{ padding: '30px', color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
                   {product.full_description}
@@ -136,20 +195,48 @@ const ProductDetail = () => {
                    </div>
                 </div>
 
-                {/* Xarid yoki Chat boshlash */}
-                <button 
-                  onClick={handleStartChat} 
-                  disabled={startingChat}
-                  className="btn btn-primary" 
-                  style={{ width: '100%', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '16px' }}
-                >
-                  <MessageCircle size={20} /> 
-                  {startingChat ? "Sotuvchiga ulanmoqda..." : "Sotuvchiga xabar yozish"}
-                </button>
-                <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '14px', color: 'var(--text-tertiary)' }}>
-                   Sotuvchidan loyiha haqida batafsil ma'lumot olish uchn bog'laning.
-                </div>
-             </div>
+                 {/* Xarid yoki Chat boshlash */}
+                 {user?.username === product.seller ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <button 
+                            onClick={() => navigate(`/edit-product/${product.id}`)} 
+                            className="btn" 
+                            style={{ width: '100%', padding: '16px', background: 'var(--accent-primary)', color: '#fff' }}
+                        >
+                            Tahrirlash
+                        </button>
+                        <button 
+                            onClick={handleDelete} 
+                            className="btn" 
+                            style={{ width: '100%', padding: '16px', background: 'rgba(255,0,0,0.1)', color: '#ff4444', border: '1px solid #ff4444' }}
+                        >
+                            O'chirish
+                        </button>
+                    </div>
+                 ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <button 
+                            onClick={handleOrder} 
+                            className="btn btn-primary" 
+                            style={{ width: '100%', padding: '16px', fontSize: '18px', fontWeight: 600 }}
+                        >
+                            Buyurtma Berish (${product.price_standard})
+                        </button>
+                        <button 
+                            onClick={handleStartChat} 
+                            disabled={startingChat}
+                            className="btn" 
+                            style={{ width: '100%', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '16px', border: '1px solid var(--glass-border)' }}
+                        >
+                            <MessageCircle size={20} /> 
+                            {startingChat ? "Sotuvchiga ulanmoqda..." : "Sotuvchiga xabar yozish"}
+                        </button>
+                    </div>
+                 )}
+                 <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '14px', color: 'var(--text-tertiary)' }}>
+                    {user?.username === product.seller ? "Siz ushbu xizmat egasisiz." : "Xavfsiz to'lov va kafolatlangan natija."}
+                 </div>
+              </div>
           </div>
 
         </div>

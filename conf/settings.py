@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'service',
     'orders',
     'notifications',
+    'payments',
     'corsheaders',
     'channels',
 ]

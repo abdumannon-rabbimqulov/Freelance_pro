@@ -16,7 +16,7 @@ from django.db.models import Q
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'photo', 'auth_role', 'is_staff')
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'photo', 'auth_role', 'is_staff', 'balance')
 
 
 class SingUpSerializers(serializers.ModelSerializer):
