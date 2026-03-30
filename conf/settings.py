@@ -31,10 +31,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
 
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -49,6 +53,10 @@ INSTALLED_APPS = [
     "shared",
     'products',
     'service',
+    'orders',
+    'notifications',
+    'corsheaders',
+    'channels',
 ]
 
 REST_FRAMEWORK={
@@ -80,6 +88,7 @@ SIMPLE_JWT = {
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -106,7 +115,15 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "conf.wsgi.application"
+# WSGI_APPLICATION = "conf.wsgi.application"
+ASGI_APPLICATION = "conf.asgi.application"
+
+# InMemory channel layer for development (Tasodifiy/Turg'un emas, faqat test uchun yaxshi)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 
 # Database

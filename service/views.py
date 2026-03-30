@@ -2,11 +2,13 @@
 from rest_framework import generics, permissions
 from .models import ProjectBoard, ReviewBoard
 from .serializers import ProjectBoardSerializers, ReviewBoardSerializer
+from shared.permissions import IsProfileComplete, IsProfileCompleteOrReadOnly
 
 
 class ProjectListCreateView(generics.ListCreateAPIView):
     queryset = ProjectBoard.objects.filter(is_published=True, is_active=True)
     serializer_class = ProjectBoardSerializers
+    permission_classes = [IsProfileCompleteOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(seller=self.request.user)
@@ -27,7 +29,7 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
 class ReviewCreateView(generics.CreateAPIView):
     queryset = ReviewBoard.objects.all()
     serializer_class = ReviewBoardSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsProfileComplete]
 
     def perform_create(self, serializer):
         product_id = self.kwargs.get('pk')

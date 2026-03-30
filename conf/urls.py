@@ -18,14 +18,16 @@ Including another URL conf
 from django.contrib import admin
 from django.urls import path,include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-from shared.views import home_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path('users/',include('users.urls')),
     path('products/',include('products.urls')),
+    path('service/',include('service.urls')),
+    path('orders/',include('orders.urls')),
+    path('notifications/',include('notifications.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
-    path('', home_view, name='home'),
+    path('', SpectacularSwaggerView.as_view(url_name='schema'), name='home'),
 ]

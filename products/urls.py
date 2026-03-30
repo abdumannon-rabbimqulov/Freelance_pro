@@ -14,4 +14,5 @@ urlpatterns=[
     path('product-seller-list/',ProductList.as_view()),
     path('message-start/<int:pk>/',MessageStart.as_view()),
     path('chat-list/',ChatListView.as_view()),
+    path('chat-detail/<int:pk>/',ChatDetailView.as_view()),
 ]

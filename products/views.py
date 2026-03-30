@@ -10,11 +10,15 @@ from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from shared.permissions import IsProfileComplete, IsProfileCompleteOrReadOnly
+from notifications.models import Notification
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializers
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsProfileCompleteOrReadOnly]
     lookup_field = 'slug'
 
     def perform_create(self, serializer):
@@ -124,28 +128,41 @@ class ProductList(ListAPIView):
 
 
 class MessageStart(APIView):
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsProfileComplete, )
 
     def post(self,request,pk):
         user=self.request.user
         serialiser=MessageStartSerializers(data=request.data)
         serialiser.is_valid(raise_exception=True)
         product=get_object_or_404(Product,pk=pk)
-        chat = Chat.objects.filter(participants=user).filter(participants__id=product.seller).first()
+        chat = Chat.objects.filter(participants=user).filter(participants__id=product.seller.id).first()
         if not chat:
-            new_chat=Chat.objects.create()
-            new_chat.participants.add(user,product.seller)
-            serialiser.save(
-                user=user,
-                chat=new_chat,
-                product=product
-            )
+            chat=Chat.objects.create()
+            chat.participants.add(user,product.seller)
 
         serialiser.save(
             user=user,
             chat=chat,
             product=product
         )
+
+        # Yangi talab: Xabar yozilganda unga xabarnoma tushishi va Real-time yuborilishi kerak
+        if user != product.seller:
+            notification = Notification.objects.create(
+                user=product.seller,
+                title="Yangi xabar keldi",
+                message=f"{user.username} sizning {product.title} mahsulotingiz yuzasidan xabar yozdi."
+            )
+            # Socket orqali real-time uzatish
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{product.seller.id}",
+                {
+                    "type": "send_notification",
+                    "title": notification.title,
+                    "message": notification.message
+                }
+            )
 
         response={
             'status':status.HTTP_200_OK,
@@ -156,7 +173,7 @@ class MessageStart(APIView):
 
 
 class ChatListView(APIView):
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsProfileComplete, )
 
     def get(self, request):
         user = request.user
@@ -164,6 +181,62 @@ class ChatListView(APIView):
 
         serializer = ChatListSerializer(chats, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ChatDetailView(APIView):
+    permission_classes = (IsProfileComplete, )
+
+    def get(self, request, pk):
+        user = request.user
+        chat = get_object_or_404(Chat, pk=pk, participants=user)
+        messages = Messages.objects.filter(chat=chat).order_by('created_at')
+        
+        # Maxsus tuzilma bilan qaytaramiz (O'ziniki yoki birovniki ekanligini bildirish uchn)
+        data = []
+        for msg in messages:
+            data.append({
+                "id": msg.id,
+                "text": msg.text,
+                "is_mine": msg.user == user,
+                "created_at": msg.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            })
+        
+        return Response(data, status=status.HTTP_200_OK)
+
+    def post(self, request, pk):
+        user = request.user
+        chat = get_object_or_404(Chat, pk=pk, participants=user)
+        text = request.data.get('text')
+        
+        if not text:
+            raise ValidationError({"error": "Xabar matni bo'sh bo'lishi mumkin emas."})
+            
+        msg = Messages.objects.create(
+            user=user,
+            chat=chat,
+            text=text
+        )
+        
+        # Websocket orqali chatdagi ikkinchi shaxsga uzatish
+        other_user = chat.get_recipient(user)
+        if other_user:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{other_user.id}",
+                {
+                    "type": "send_notification",
+                    "title": f"{user.username} dan yangi xabar",
+                    "message": text
+                }
+            )
+
+        return Response({
+            "id": msg.id,
+            "text": msg.text,
+            "is_mine": True,
+            "created_at": msg.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        }, status=status.HTTP_201_CREATED)
+
 
 
 
