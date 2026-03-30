@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import Register from './pages/Register';
+import CreateProduct from './pages/CreateProduct';
 import ChatDashboard from './pages/Chat';
 import { useContext } from 'react';
 import { AuthContext } from './context/AuthContext';
@@ -23,11 +25,20 @@ const App = () => {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
           <Route 
             path="chat" 
             element={
               <ProtectedRoute>
                 <ChatDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="create-product" 
+            element={
+              <ProtectedRoute>
+                <CreateProduct />
               </ProtectedRoute>
             } 
           />

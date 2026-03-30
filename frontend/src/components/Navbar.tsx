@@ -28,6 +28,9 @@ const Navbar = () => {
           <Link to="/explore" className="nav-link">Explore</Link>
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <Link to="/create-product" className="btn btn-primary" style={{ padding: '8px 16px', background: 'var(--primary)', color: '#fff' }}>
+                + Xizmat Qo'shish
+              </Link>
               <Link to="/chat" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <User size={18} /> {user.username || 'User'}
               </Link>
@@ -57,8 +60,9 @@ const Navbar = () => {
           <Link to="/explore" className="nav-link">Explore</Link>
           {user ? (
             <>
+              <Link to="/create-product" className="btn btn-primary" style={{ width: '100%', marginTop: '5px' }}>+ Xizmat Qo'shish</Link>
               <Link to="/chat" className="nav-link"><User size={18} /> Profil ({user.username})</Link>
-              <button onClick={() => { logout(); navigate('/'); }} className="btn btn-primary" style={{ width: '100%', marginTop: '10px' }}>Logout</button>
+              <button onClick={() => { logout(); navigate('/'); }} className="btn btn-primary" style={{ width: '100%', marginTop: '5px', background: 'transparent', border: '1px solid var(--primary)', color: '#fff' }}>Logout</button>
             </>
           ) : (
             <>

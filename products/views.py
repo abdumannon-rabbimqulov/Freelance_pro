@@ -81,6 +81,11 @@ class ProductListView(ListAPIView):
 
 
 
+class CategoryListView(ListAPIView):
+    permission_classes = (AllowAny, )
+    queryset = Category.objects.filter(is_active=True)
+    serializer_class = CategorySerializer
+
 class ProductDetailView(APIView):
     permission_classes = (AllowAny, )
     def get(self,request,pk):

@@ -10,6 +10,7 @@ urlpatterns=[
     path('', include(router.urls)),
     path('similar-search/', SimilarProductListView.as_view(), name='similar-product-search'),
     path('product-list/',ProductListView.as_view()),
+    path('categories/',CategoryListView.as_view()),
     path('product/<int:pk>/',ProductDetailView.as_view()),
     path('product-seller-list/',ProductList.as_view()),
     path('message-start/<int:pk>/',MessageStart.as_view()),
