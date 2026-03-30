@@ -8,12 +8,14 @@ import CreateProduct from './pages/CreateProduct';
 import EditProduct from './pages/EditProduct';
 import ProductDetail from './pages/ProductDetail';
 import Profile from './pages/Profile';
-import AdminDashboard from './pages/AdminDashboard';
 import ChatDashboard from './pages/Chat';
 import CreateProject from './pages/CreateProject';
 import EditProject from './pages/EditProject';
 import ProjectDetail from './pages/ProjectDetail';
 import Orders from './pages/Orders';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminLayout from './components/AdminLayout';
+import AdminUsers from './pages/AdminUsers';
 import AdminPayouts from './pages/AdminPayouts';
 import AdminSettings from './pages/AdminSettings';
 import { AuthContext } from './context/AuthContext';
@@ -37,11 +39,16 @@ const App = () => {
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="project/:slug" element={<ProjectDetail />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="admin-dashboard" element={<AdminDashboard />} />
           <Route path="chat" element={<ProtectedRoute><ChatDashboard /></ProtectedRoute>} />
           <Route path="orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-          <Route path="admin-payouts" element={<ProtectedRoute><AdminPayouts /></ProtectedRoute>} />
-          <Route path="admin-settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
+          
+          {/* Admin Routes */}
+          <Route path="admin" element={<ProtectedRoute><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+          <Route path="admin/dashboard" element={<ProtectedRoute><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+          <Route path="admin/payouts" element={<ProtectedRoute><AdminLayout><AdminPayouts /></AdminLayout></ProtectedRoute>} />
+          <Route path="admin/settings" element={<ProtectedRoute><AdminLayout><AdminSettings /></AdminLayout></ProtectedRoute>} />
+          <Route path="admin/users" element={<ProtectedRoute><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>} />
+
           <Route path="create-product" element={<ProtectedRoute><CreateProduct /></ProtectedRoute>} />
           <Route path="edit-product/:id" element={<ProtectedRoute><EditProduct /></ProtectedRoute>} />
           <Route path="create-project" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />

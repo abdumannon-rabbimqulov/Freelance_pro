@@ -12,8 +12,16 @@ const ProjectDetail = () => {
 
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [startingChat] = useState(false);
   const [activeImage, setActiveImage] = useState<string>("");
+
+  // Proposal States
+  const [showProposalModal, setShowProposalModal] = useState(false);
+  const [proposalData, setProposalData] = useState({
+    price: '',
+    delivery_time: '',
+    description: ''
+  });
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     axios.get(`http://127.0.0.1:8000/service/${slug}/`)
@@ -51,27 +59,32 @@ const ProjectDetail = () => {
     }
   };
 
-  const handleApply = async () => {
+  const handleSendProposal = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user) {
-      toast.warning("Loyihaga ariza topshirishdan oldin tizimga kiring!");
+      toast.warning("Taklif yuborishdan oldin tizimga kiring!");
       navigate('/login');
       return;
     }
-    const requirements = window.prompt("Iltimos, taklifingiz haqida qisqacha yozing (Masalan: Men buni 2 kunda qilaman):");
-    if (requirements === null) return;
 
+    setSending(true);
     try {
       const token = localStorage.getItem('access');
-      await axios.post('http://127.0.0.1:8000/orders/orders/', {
+      await axios.post('http://127.0.0.1:8000/service/p/proposals/', {
         project: project.id,
-        requirements: requirements
+        price: proposalData.price,
+        delivery_time: proposalData.delivery_time,
+        description: proposalData.description
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success("Taklifingiz yuborildi!");
-      navigate('/orders');
+      toast.success("Taklifingiz muvaffaqiyatli yuborildi!");
+      setShowProposalModal(false);
+      navigate('/orders'); // Actually it might be better to stay or go to orders
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Xatolik yuz berdi");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -164,11 +177,11 @@ const ProjectDetail = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '40px' }}>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)' }}>
                       <Clock size={20} style={{ color: 'var(--accent-secondary)' }} />
-                      <span style={{ fontWeight: 500 }}>Muddat: {project.delivery_standard} kun</span>
+                      <span style={{ fontWeight: 500 }}>Budjet muddati: {project.delivery_standard} kun</span>
                    </div>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)' }}>
                       <DollarSign size={20} style={{ color: 'var(--accent-secondary)' }} />
-                      <span style={{ fontWeight: 500 }}>Ruxsat etilgan budjet</span>
+                      <span style={{ fontWeight: 500 }}>Maximal budjet: ${project.price_standard}</span>
                    </div>
                 </div>
 
@@ -192,13 +205,12 @@ const ProjectDetail = () => {
                     </div>
                 ) : (
                     <button 
-                        onClick={handleApply} 
-                        disabled={startingChat}
+                        onClick={() => setShowProposalModal(true)} 
                         className="btn" 
                         style={{ width: '100%', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '16px', background: 'var(--accent-secondary)', color: '#fff' }}
                     >
                         <MessageCircle size={20} /> 
-                        {startingChat ? "Bog'lanilmoqda..." : "Ariza topshirish"}
+                        Taklif yuborish
                     </button>
                 )}
              </div>
@@ -206,6 +218,59 @@ const ProjectDetail = () => {
 
         </div>
       </div>
+
+      {/* Proposal Modal */}
+      {showProposalModal && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', backdropFilter: 'blur(5px)' }}>
+            <div className="glass-panel animate-scale-in" style={{ maxWidth: '500px', width: '100%', padding: '30px' }}>
+                <h2 className="brand-font" style={{ marginBottom: '10px' }}>Loyiha uchun taklif</h2>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '25px', fontSize: '14px' }}>Mijozning byudjeti: ${project.price_standard}</p>
+                
+                <form onSubmit={handleSendProposal}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                        <div className="input-group">
+                            <label>Sizning narxingiz ($)</label>
+                            <input 
+                                type="number" 
+                                value={proposalData.price}
+                                onChange={(e) => setProposalData({ ...proposalData, price: e.target.value })}
+                                placeholder="0.00"
+                                required 
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Muddat (kun)</label>
+                            <input 
+                                type="number" 
+                                value={proposalData.delivery_time}
+                                onChange={(e) => setProposalData({ ...proposalData, delivery_time: e.target.value })}
+                                placeholder="Kun"
+                                required 
+                            />
+                        </div>
+                    </div>
+
+                    <div className="input-group" style={{ marginBottom: '25px' }}>
+                        <label>Taklifingiz haqida qisqacha</label>
+                        <textarea 
+                            value={proposalData.description}
+                            onChange={(e) => setProposalData({ ...proposalData, description: e.target.value })}
+                            placeholder="Mijozni qanday qilib ishontira olasiz?.."
+                            style={{ height: '120px' }}
+                            required
+                        />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '15px' }}>
+                        <button type="submit" disabled={sending} className="btn btn-primary" style={{ flex: 1, background: 'var(--accent-secondary)' }}>
+                           {sending ? "Yuborilmoqda..." : "Taklifni yuborish"}
+                        </button>
+                        <button type="button" onClick={() => setShowProposalModal(false)} className="btn" style={{ flex: 1, background: 'rgba(255,255,255,0.05)' }}>Bekor qilish</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+      )}
     </div>
   );
 };

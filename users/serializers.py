@@ -16,7 +16,7 @@ from django.db.models import Q
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'photo', 'auth_role', 'is_staff', 'balance')
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'photo', 'auth_role', 'is_staff', 'balance', 'completed_orders_count', 'cancelled_orders_count')
 
 
 class SingUpSerializers(serializers.ModelSerializer):
@@ -146,7 +146,10 @@ class LoginSerializers(TokenObtainSerializer):
                 "username": user.username,
                 "email": user.email,
                 "is_staff": user.is_staff,
-                "auth_role": user.auth_role
+                "auth_role": user.auth_role,
+                "balance": user.balance,
+                "completed_orders_count": user.completed_orders_count,
+                "cancelled_orders_count": user.cancelled_orders_count
             }
         }
 

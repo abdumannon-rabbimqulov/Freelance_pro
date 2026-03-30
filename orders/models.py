@@ -25,6 +25,10 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     requirements = models.TextField(blank=True, null=True)
     
+    # Delivery (Work proof)
+    delivery_text = models.TextField(blank=True, null=True)
+    delivery_file = models.FileField(upload_to='deliveries/', blank=True, null=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)

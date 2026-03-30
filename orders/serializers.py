@@ -14,6 +14,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'id', 'client', 'client_name', 'seller', 'seller_name', 
             'product', 'product_title', 'project', 'project_title', 
             'price', 'delivery_time', 'status', 'status_display', 
-            'requirements', 'rating', 'feedback', 'created_at', 'updated_at', 'completed_at'
+            'requirements', 'delivery_text', 'delivery_file',
+            'rating', 'feedback', 'created_at', 'updated_at', 'completed_at'
         ]
         read_only_fields = ['id', 'client', 'seller', 'price', 'delivery_time', 'created_at', 'updated_at', 'completed_at']

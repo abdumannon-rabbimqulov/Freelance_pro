@@ -42,6 +42,16 @@ class CustomUser(AbstractUser,BasModel):
     def last_seen(self):
         return cache.get(f"last-seen-{self.id}")
 
+    @property
+    def completed_orders_count(self):
+        from orders.models import Order
+        return Order.objects.filter(seller=self, status='completed').count()
+
+    @property
+    def cancelled_orders_count(self):
+        from orders.models import Order
+        return Order.objects.filter(seller=self, status='cancelled').count()
+
 
     def check_username(self):
         if not self.username:

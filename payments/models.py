@@ -23,6 +23,7 @@ class Transaction(models.Model):
         ('order_payment', 'Order Payment'),
         ('commission', 'Platform Commission'),
         ('withdrawal', 'Withdrawal'),
+        ('deposit', 'Top Up Balance'),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -53,3 +54,16 @@ class PayoutRequest(models.Model):
 
     def __str__(self):
         return f"Payout {self.seller.username} - {self.status}"
+
+class Card(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='cards')
+    card_number = models.CharField(max_length=16)
+    expiry_date = models.CharField(max_length=5) # MM/YY
+    cvv = models.CharField(max_length=3)
+    card_holder = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - ****{self.card_number[-4:]}"

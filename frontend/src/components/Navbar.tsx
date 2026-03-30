@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, User, LogOut, Wallet, Settings, CreditCard } from 'lucide-react';
+import { Menu, X, Search, User, LogOut, Wallet, ShieldAlert } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import './Navbar.css';
 
@@ -28,17 +28,11 @@ const Navbar = () => {
           <Link to="/explore" className="nav-link">Explore</Link>
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              {user.auth_role === 'admin' && (
-                <>
-                  <Link to="/admin-payouts" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#10b981' }}>
-                    <CreditCard size={18} /> Moliya
-                  </Link>
-                  <Link to="/admin-settings" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Settings size={18} /> Sozlamalar
-                  </Link>
-                </>
-              )}
-              {user.auth_role === 'seller' ? (
+              {user.auth_role === 'admin' ? (
+                <Link to="/admin/dashboard" className="btn btn-primary" style={{ padding: '8px 16px', background: 'var(--primary)' }}>
+                  <ShieldAlert size={18} style={{ marginRight: '8px' }} /> Admin Panel
+                </Link>
+              ) : user.auth_role === 'seller' ? (
                 <Link to="/create-product" className="btn btn-primary" style={{ padding: '8px 16px' }}>
                   + Xizmat Qo'shish
                 </Link>
@@ -51,11 +45,9 @@ const Navbar = () => {
                 <User size={18} /> 
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
                   <span style={{ fontSize: '14px', fontWeight: 600 }}>{user.username}</span>
-                  {(user.auth_role === 'seller' || user.auth_role === 'admin') && (
-                    <span style={{ fontSize: '11px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Wallet size={10} /> ${user.balance || '0.00'}
-                    </span>
-                  )}
+                  <span style={{ fontSize: '11px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    <Wallet size={10} /> ${user.balance || '0.00'}
+                  </span>
                 </div>
               </Link>
               <Link to="/chat" className="nav-link">Chat</Link>
@@ -86,20 +78,16 @@ const Navbar = () => {
           <Link to="/explore" className="nav-link">Explore</Link>
           {user ? (
             <>
-              {user.auth_role === 'admin' && (
-                <>
-                  <Link to="/admin-payouts" className="nav-link" style={{ color: '#10b981' }}>Moliya (Payouts)</Link>
-                  <Link to="/admin-settings" className="nav-link">Platforma Sozlamalari</Link>
-                </>
-              )}
-              {user.auth_role === 'seller' ? (
+              {user.auth_role === 'admin' ? (
+                <Link to="/admin/dashboard" className="btn btn-primary" style={{ width: '100%', marginTop: '5px' }}>Admin Boshqaruvi</Link>
+              ) : user.auth_role === 'seller' ? (
                 <Link to="/create-product" className="btn btn-primary" style={{ width: '100%', marginTop: '5px' }}>+ Xizmat Qo'shish</Link>
               ) : (
                 <Link to="/create-project" className="btn btn-primary" style={{ width: '100%', marginTop: '5px', background: 'var(--accent-secondary)' }}>+ E'lon Berish</Link>
               )}
               <Link to="/profile" className="nav-link" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span><User size={18} /> Profil ({user.username})</span>
-                {(user.auth_role === 'seller' || user.auth_role === 'admin') && <span style={{ color: '#10b981' }}>${user.balance || '0.00'}</span>}
+                <span style={{ color: '#10b981' }}>${user.balance || '0.00'}</span>
               </Link>
               <Link to="/chat" className="nav-link">Chat</Link>
               <Link to="/orders" className="nav-link">Buyurtmalar</Link>

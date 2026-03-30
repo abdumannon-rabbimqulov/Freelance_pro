@@ -48,8 +48,7 @@ const AdminSettings = () => {
     };
 
     return (
-        <div className="admin-settings-page py-10" style={{ minHeight: '100vh' }}>
-            <div className="container" style={{ maxWidth: '600px' }}>
+        <div className="admin-settings-page">
                 <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                     <h1 className="brand-font" style={{ fontSize: '36px' }}>Platforma Sozlamalari</h1>
                     <p style={{ color: 'var(--text-secondary)' }}>Moliyaviy komissiya va platforma qoidalarini boshqarish</p>
@@ -116,7 +115,6 @@ const AdminSettings = () => {
                         </div>
                     </div>
                 )}
-            </div>
         </div>
     );
 };

@@ -29,3 +29,21 @@ class AdminPayoutUpdateSerializer(serializers.ModelSerializer):
         if attrs.get('status') == 'rejected' and not attrs.get('rejection_reason'):
             raise serializers.ValidationError({"rejection_reason": "Rad etish sababini ko'rsatishingiz shart."})
         return attrs
+
+from .models import Card
+
+class CardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Card
+        fields = ('id', 'card_number', 'expiry_date', 'cvv', 'card_holder', 'created_at')
+        read_only_fields = ('id', 'user', 'created_at')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Mask card number for security
+        data['card_number'] = f"**** **** **** {instance.card_number[-4:]}"
+        return data
+
+class DepositSerializer(serializers.Serializer):
+    card_id = serializers.UUIDField(required=True)
+    amount = serializers.DecimalField(max_digits=15, decimal_places=2, required=True, min_value=1.0)

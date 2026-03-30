@@ -86,7 +86,7 @@ const ProductDetail = () => {
 
     try {
       const token = localStorage.getItem('access');
-      await axios.post('http://127.0.0.1:8000/orders/orders/', {
+      await axios.post('http://127.0.0.1:8000/orders/', {
         product: product.id,
         requirements: requirements
       }, {
@@ -124,9 +124,19 @@ const ProductDetail = () => {
                </div>
                <div>
                   <div style={{ fontWeight: 600 }}>{product.seller || "Sotuvchi"}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24', fontSize: '14px' }}>
-                    <Star size={14} fill="currentColor" /> {product.average_rating || "5.0"} 
-                    <span style={{ color: 'var(--text-tertiary)' }}>({product.reviews?.length || 0} baholash)</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '5px' }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24', fontSize: '14px' }}>
+                        <Star size={14} fill="currentColor" /> {product.average_rating || "5.0"} 
+                        <span style={{ color: 'var(--text-tertiary)' }}>({product.reviews?.length || 0})</span>
+                     </div>
+                     <div style={{ fontSize: '12px', color: '#10b981', fontWeight: 500, background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                        {product.seller_completed_orders}ta muvaffaqiyatli
+                     </div>
+                     {product.seller_cancelled_orders > 0 && (
+                        <div style={{ fontSize: '12px', color: '#ef4444', fontWeight: 500, background: 'rgba(239, 68, 68, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                           {product.seller_cancelled_orders}ta bekor qilingan
+                        </div>
+                     )}
                   </div>
                </div>
             </div>

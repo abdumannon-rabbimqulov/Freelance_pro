@@ -59,9 +59,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const storedUser = localStorage.getItem('user_data');
         if (storedUser) {
           setUser(JSON.parse(storedUser));
+          // Re-fetch to ensure the balance is fresh
+          refreshUser();
         } else {
           const decoded = jwtDecode<User>(access);
           setUser(decoded);
+          refreshUser();
         }
         setToken(access);
       } catch (e) {

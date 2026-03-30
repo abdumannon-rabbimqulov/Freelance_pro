@@ -62,8 +62,7 @@ const AdminPayouts = () => {
     };
 
     return (
-        <div className="admin-payouts-page py-10" style={{ minHeight: '100vh' }}>
-            <div className="container" style={{ maxWidth: '900px' }}>
+        <div className="admin-payouts-page">
                 <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                     <h1 className="brand-font" style={{ fontSize: '36px' }}>Pul yechish so'rovlari</h1>
                     <p style={{ color: 'var(--text-secondary)' }}>Sotuvchilar tomonidan yuborilgan moliya so'rovlarini boshqarish</p>
@@ -136,7 +135,6 @@ const AdminPayouts = () => {
                         ))}
                     </div>
                 )}
-            </div>
 
             {/* Rejection Modal */}
             {selectedPayout && (

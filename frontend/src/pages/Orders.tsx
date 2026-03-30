@@ -9,13 +9,19 @@ const Orders = () => {
     const { user } = useContext(AuthContext);
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'buying' | 'selling'>('buying');
+    const [activeTab, setActiveTab ] = useState<'buying' | 'selling'>('buying');
     
     // Completion Modal States
     const [showModal, setShowModal] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
     const [rating, setRating] = useState(5);
     const [feedback, setFeedback] = useState('');
+    
+    // Delivery Modal States
+    const [showDeliverModal, setShowDeliverModal] = useState(false);
+    const [deliveryText, setDeliveryText] = useState('');
+    const [deliveryFile, setDeliveryFile] = useState<File | null>(null);
+    const [delivering, setDelivering] = useState(false);
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -50,13 +56,43 @@ const Orders = () => {
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            toast.success("Muvaffaqiyatli yakunlandi");
+            toast.success("Muvaffaqiyatli yangilandi");
             setShowModal(false);
             setRating(5);
             setFeedback('');
             fetchOrders();
         } catch (err: any) {
             toast.error(err.response?.data?.error || "Xatolik yuz berdi");
+        }
+    };
+
+    const handleDeliver = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedOrderId) return;
+        
+        setDelivering(true);
+        try {
+            const token = localStorage.getItem('access');
+            const formData = new FormData();
+            formData.append('delivery_text', deliveryText);
+            if (deliveryFile) formData.append('delivery_file', deliveryFile);
+
+            await axios.post(`http://127.0.0.1:8000/orders/${selectedOrderId}/deliver/`, formData, {
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            
+            toast.success("Ish muvaffaqiyatli topshirildi!");
+            setShowDeliverModal(false);
+            setDeliveryText('');
+            setDeliveryFile(null);
+            fetchOrders();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || "Xatolik yuz berdi");
+        } finally {
+            setDelivering(false);
         }
     };
 
@@ -141,7 +177,12 @@ const Orders = () => {
                                                     <button onClick={() => updateStatus(order.id, 'in_progress')} className="btn" style={{ padding: '8px 12px', fontSize: '12px', background: '#3498db', color: '#fff' }}>Qabul qilish</button>
                                                 )}
                                                 {order.status === 'in_progress' && (
-                                                    <button onClick={() => updateStatus(order.id, 'delivered')} className="btn" style={{ padding: '8px 12px', fontSize: '12px', background: '#9b59b2', color: '#fff' }}>Yetkazib berdim</button>
+                                                    <button 
+                                                        onClick={() => { setSelectedOrderId(order.id); setShowDeliverModal(true); }} 
+                                                        className="btn" style={{ padding: '8px 12px', fontSize: '12px', background: '#9b59b2', color: '#fff' }}
+                                                    >
+                                                        Ishni topshirish
+                                                    </button>
                                                 )}
                                                 <button onClick={() => updateStatus(order.id, 'cancelled')} className="btn" style={{ padding: '8px 12px', fontSize: '12px', background: 'rgba(255,255,255,0.05)', color: '#ff4444' }}>Bekor qilish</button>
                                             </div>
@@ -156,7 +197,27 @@ const Orders = () => {
 
                                     {order.requirements && (
                                         <div style={{ width: '100%', marginTop: '15px', padding: '15px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                                            <strong>Talablar:</strong> {order.requirements}
+                                            <strong>Mijoz talablari:</strong> {order.requirements}
+                                        </div>
+                                    )}
+
+                                    {(order.delivery_text || order.delivery_file) && (
+                                        <div style={{ width: '100%', marginTop: '15px', padding: '15px', borderRadius: '12px', background: 'rgba(155, 89, 182, 0.05)', border: '1px solid rgba(155, 89, 182, 0.2)', fontSize: '14px' }}>
+                                            <div style={{ color: '#9b59b2', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <CheckCircle size={16} /> Topshirilgan ish natijasi:
+                                            </div>
+                                            {order.delivery_text && <p style={{ margin: '0 0 10px 0', color: '#fff' }}>{order.delivery_text}</p>}
+                                            {order.delivery_file && (
+                                                <a 
+                                                    href={`http://127.0.0.1:8000${order.delivery_file}`} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="btn"
+                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', fontSize: '12px', background: 'rgba(155, 89, 182, 0.2)', color: '#fff', border: '1px solid rgba(155, 89, 182, 0.4)' }}
+                                                >
+                                                    Faylni yuklab olish
+                                                </a>
+                                            )}
                                         </div>
                                     )}
 
@@ -226,6 +287,55 @@ const Orders = () => {
                                     Bekor qilish
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Delivery Modal */}
+                {showDeliverModal && (
+                    <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+                        <div className="glass-panel animate-scale-in" style={{ maxWidth: '500px', width: '100%', padding: '30px' }}>
+                            <h2 className="brand-font" style={{ marginBottom: '10px' }}>Ishni topshirish</h2>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '25px' }}>Ish natijasini matn yoki fayl ko'rinishida yuboring.</p>
+                            
+                            <form onSubmit={handleDeliver}>
+                                <div className="input-group" style={{ marginBottom: '20px' }}>
+                                    <label>Xulosa / Habar (Ixtiyoriy)</label>
+                                    <textarea 
+                                        value={deliveryText}
+                                        onChange={(e) => setDeliveryText(e.target.value)}
+                                        placeholder="Bajarilgan ish haqida qisqacha ma'lumot..."
+                                        style={{ height: '100px' }}
+                                    />
+                                </div>
+
+                                <div className="input-group" style={{ marginBottom: '30px' }}>
+                                    <label>Fayl biriktirish (Ixtiyoriy)</label>
+                                    <input 
+                                        type="file" 
+                                        onChange={(e) => setDeliveryFile(e.target.files?.[0] || null)}
+                                        style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', color: '#fff' }}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '15px' }}>
+                                    <button 
+                                        type="submit"
+                                        disabled={delivering || (!deliveryText && !deliveryFile)}
+                                        className="btn btn-primary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    >
+                                        {delivering ? <Loader size={18} className="spin" /> : <Briefcase size={18} />}
+                                        {delivering ? "Yuborilmoqda..." : "Ishni topshirish"}
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowDeliverModal(false)}
+                                        className="btn" style={{ flex: 1, background: 'rgba(255,255,255,0.05)' }}
+                                    >
+                                        Bekor qilish
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 )}

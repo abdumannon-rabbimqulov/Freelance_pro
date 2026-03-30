@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ProjectBoard, ReviewBoard, ProjectImage
+from .models import ProjectBoard, ReviewBoard, ProjectImage, Proposal
 
 
 class ReviewBoardSerializer(serializers.ModelSerializer):
@@ -42,3 +42,19 @@ class ProjectBoardSerializers(serializers.ModelSerializer):
         if reviews.exists():
             return sum([r.rating for r in reviews]) / reviews.count()
         return 0
+
+
+class ProposalSerializer(serializers.ModelSerializer):
+    seller_name = serializers.ReadOnlyField(source='seller.username')
+    project_title = serializers.ReadOnlyField(source='project.title')
+    seller_completed_orders = serializers.ReadOnlyField(source='seller.completed_orders_count')
+    seller_cancelled_orders = serializers.ReadOnlyField(source='seller.cancelled_orders_count')
+
+    class Meta:
+        model = Proposal
+        fields = [
+            'id', 'project', 'project_title', 'seller', 'seller_name', 
+            'seller_completed_orders', 'seller_cancelled_orders',
+            'price', 'delivery_time', 'description', 'status', 'created_at'
+        ]
+        read_only_fields = ['id', 'seller', 'status', 'created_at']
