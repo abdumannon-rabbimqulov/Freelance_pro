@@ -110,7 +110,7 @@ const ChatDashboard = () => {
                 </div>
                 <div className="chat-info">
                   <h4>{chat.recipient_username}</h4>
-                  <p>{chat.last_message_text.substring(0, 30)}...</p>
+                  <p>{chat.last_message_text ? chat.last_message_text.substring(0, 30) : "Xizmat yuzasidan murojaat"}...</p>
                 </div>
               </div>
             ))}

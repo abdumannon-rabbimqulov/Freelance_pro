@@ -27,15 +27,21 @@ const Navbar = () => {
         <div className="nav-links desktop-only">
           <Link to="/explore" className="nav-link">Explore</Link>
           {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <Link to="/create-product" className="btn btn-primary" style={{ padding: '8px 16px', background: 'var(--primary)', color: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              {user.is_staff && (
+                <Link to="/admin-dashboard" className="nav-link" style={{ color: 'var(--accent-secondary)', fontWeight: 'bold' }}>
+                  Admin Panel
+                </Link>
+              )}
+              <Link to="/create-product" className="btn btn-primary" style={{ padding: '8px 16px' }}>
                 + Xizmat Qo'shish
               </Link>
-              <Link to="/chat" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <User size={18} /> {user.username || 'User'}
+              <Link to="/profile" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <User size={18} /> {user.username}
               </Link>
+              <Link to="/chat" className="nav-link">Chat</Link>
               <button onClick={() => { logout(); navigate('/'); }} className="btn btn-primary" style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--primary)', color: '#fff' }}>
-                Logout <LogOut size={16} />
+                <LogOut size={16} />
               </button>
             </div>
           ) : (
@@ -60,8 +66,10 @@ const Navbar = () => {
           <Link to="/explore" className="nav-link">Explore</Link>
           {user ? (
             <>
+              {user.is_staff && <Link to="/admin-dashboard" className="nav-link">Admin Panel</Link>}
               <Link to="/create-product" className="btn btn-primary" style={{ width: '100%', marginTop: '5px' }}>+ Xizmat Qo'shish</Link>
-              <Link to="/chat" className="nav-link"><User size={18} /> Profil ({user.username})</Link>
+              <Link to="/profile" className="nav-link"><User size={18} /> Profil ({user.username})</Link>
+              <Link to="/chat" className="nav-link">Chat</Link>
               <button onClick={() => { logout(); navigate('/'); }} className="btn btn-primary" style={{ width: '100%', marginTop: '5px', background: 'transparent', border: '1px solid var(--primary)', color: '#fff' }}>Logout</button>
             </>
           ) : (

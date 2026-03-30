@@ -93,7 +93,7 @@ class Product(models.Model):
 
     views_count = models.IntegerField(default=0, verbose_name="Ko'rilganlar")
     orders_count = models.IntegerField(default=0, verbose_name="Buyurtmalar")
-    is_active=models.BooleanField(default=True)
+    is_active=models.BooleanField(default=False)
 
 
 
@@ -150,7 +150,7 @@ class Review(models.Model):
         unique_together = ('product', 'user')
 
     def __str__(self):
-        return f"{self.user.username} - {self.product.name} - {self.rating}"
+        return f"{self.user.username} - {self.product.title} - {self.rating}"
 
 
 

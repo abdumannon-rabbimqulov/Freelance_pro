@@ -6,7 +6,7 @@ from .services import generate_image_vector
 from rest_framework.generics import ListAPIView,CreateAPIView
 import numpy as np
 from django.db import models
-from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework.permissions import AllowAny,IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -22,7 +22,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
 
     def perform_create(self, serializer):
-        product=serializer.save(seller=self.request.user)
+        product=serializer.save(seller=self.request.user, is_active=False)
         if product.main_image:
             try:
                 vector = generate_image_vector(product.main_image.path)
@@ -30,7 +30,19 @@ class ProductViewSet(viewsets.ModelViewSet):
                     product.image_vector = vector
                     product.save(update_fields=['image_vector'])
             except Exception as e:
-                raise ValidationError({"message":f"Rasm vektorlashda xatolik: {e}"})
+                print(f"Rasm vektorlashda xatolik: {e}")
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Product.objects.all()
+        return Product.objects.filter(seller=user)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.seller != request.user and not request.user.is_staff:
+            return Response({"error": "Sizda bu mahsulotni o'chirish huquqi yo'q"}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
 
 
@@ -74,10 +86,6 @@ class SimilarProductListView(APIView):
         serializer = ProductSerializers(queryset, many=True)
         return Response(serializer.data)
 
-class ProductListView(ListAPIView):
-    permission_classes = (AllowAny, )
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializers
 
 
 
@@ -122,13 +130,41 @@ class ProductDetailView(APIView):
 
 
 class ProductList(ListAPIView):
-    """userni o'ziniki"""
+    """Bosh sahifa uchn faqat Tasdiqlangan (is_active=True) xizmatlar ro'yxati"""
     permission_classes = (AllowAny,)
     serializer_class = ProductSerializers
 
     def get_queryset(self):
-        user=self.request.user
-        return Product.objects.filter(seller=user)
+        return Product.objects.filter(is_active=True).order_by('-created_at')
+
+
+class AdminProductList(ListAPIView):
+    """Adminlar uchn Tasdiq kutilayotgan (is_active=False) xizmatlar ro'yxati"""
+    permission_classes = (IsAdminUser,)
+    serializer_class = ProductSerializers
+
+    def get_queryset(self):
+        return Product.objects.filter(is_active=False).order_by('-created_at')
+
+
+class ApproveProduct(APIView):
+    """Admin mahsulotni tasdiqlashi (is_active=True qilish) uchn API"""
+    permission_classes = (IsAdminUser,)
+
+    def post(self, request, pk):
+        product = get_object_or_404(Product, pk=pk)
+        product.is_active = True
+        product.save()
+        return Response({"message": "Mahsulot muvaffaqiyatli tasdiqlandi!"}, status=status.HTTP_200_OK)
+
+
+class SellerProductList(ListAPIView):
+    """Sotuvchining o'zi uchn barcha (Active/Inactive) xizmatlari ro'yxati"""
+    permission_classes = (IsProfileComplete,)
+    serializer_class = ProductSerializers
+
+    def get_queryset(self):
+        return Product.objects.filter(seller=self.request.user).order_by('-created_at')
 
 
 

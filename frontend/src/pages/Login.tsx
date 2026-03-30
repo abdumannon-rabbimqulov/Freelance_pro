@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import './Auth.css'; // Maxsus uslublar
@@ -22,9 +22,9 @@ const Login = () => {
       });
 
       if (response.data.access) {
-        login(response.data.access, response.data.refresh);
+        login(response.data.access, response.data.refresh, response.data.user);
         toast.success("Tizimga muvaffaqiyatli kirdingiz!");
-        navigate('/chat');
+        navigate('/');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Login yoki Parol xato!");
@@ -61,6 +61,9 @@ const Login = () => {
           </div>
 
           <button type="submit" className="btn btn-primary auth-submit">Tizimga kirish</button>
+          <div style={{ textAlign: 'center', marginTop: '16px', color: 'var(--text-secondary)' }}>
+             Hali hisobingiz yo'qmi? <Link to="/register" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 'bold' }}>Ro'yxatdan o'ting</Link>
+          </div>
         </form>
       </div>
     </div>

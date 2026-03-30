@@ -1,7 +1,8 @@
 import { ArrowRight, Code, PenTool, Video, Search, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import { AuthContext } from '../context/AuthContext';
 
 const staticCategories = [
   { name: 'Development & IT', icon: <Code size={24} />, color: 'var(--accent-primary)', jobs: 1240 },
@@ -12,15 +13,46 @@ const staticCategories = [
 
 const Home = () => {
   const [featuredServices, setFeaturedServices] = useState<any[]>([]);
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     // Backend dan haqiqiy Product larni yuklab olish
     axios.get('http://127.0.0.1:8000/products/product-list/')
       .then(res => {
-        setFeaturedServices(res.data);
+        // O'zining mahsulotlarini ko'rmasligi uchn filtr qilamiz
+        const filtered = user 
+          ? res.data.filter((s: any) => s.seller !== user.username) 
+          : res.data;
+        setFeaturedServices(filtered);
       })
       .catch(err => console.error("Xizmatlarni yuklashda xatolik:", err));
+      
+    // Backend dan haqiqiy Kategoriyalarni yuklab olish
+    axios.get('http://127.0.0.1:8000/products/categories/')
+      .then(res => {
+        setDbCategories(res.data);
+      })
+      .catch(err => console.error("Kategoriyalarni yuklashda xatolik:", err));
   }, []);
+
+  const getImageUrl = (imgUrl: string) => {
+    if (!imgUrl) return "";
+    if (imgUrl.startsWith("http")) return imgUrl;
+    return `http://127.0.0.1:8000${imgUrl}`;
+  };
+
+  // Dinamik fon tanlash funksiyasi
+  const getRandomGradient = (id: number) => {
+    const gradients = [
+      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)',
+      'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)',
+      'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+    ];
+    return gradients[id % gradients.length];
+  };
 
   return (
     <div className="home-page animate-fade-in">
@@ -66,15 +98,27 @@ const Home = () => {
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
-            {staticCategories.map((cat, idx) => (
+            {dbCategories.map((cat, idx) => {
+              // Har bir kategoriya uchn maxsus default icon va color tuzamiz
+              const isTech = cat.name.toLowerCase().includes('react') || cat.name.toLowerCase().includes('django') || cat.name.toLowerCase().includes('app') || cat.name.toLowerCase().includes('data');
+              const isDesign = cat.name.toLowerCase().includes('design') || cat.name.toLowerCase().includes('video');
+              const isMarketing = cat.name.toLowerCase().includes('marketing') || cat.name.toLowerCase().includes('seo') || cat.name.toLowerCase().includes('copy');
+              
+              let Icon = Code;
+              let color = '#43e97b';
+              if (isDesign) { Icon = PenTool; color = '#ec4899'; }
+              if (isMarketing) { Icon = Search; color = '#10b981'; }
+
+              return (
               <div key={idx} className="glass-panel" style={{ padding: '32px 24px', cursor: 'pointer', transition: 'transform 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}>
-                <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: `${cat.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cat.color, marginBottom: '20px' }}>
-                  {cat.icon}
+                <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: `${color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: color, marginBottom: '20px' }}>
+                  <Icon size={24} />
                 </div>
                 <h3 className="brand-font" style={{ fontSize: '20px', marginBottom: '8px' }}>{cat.name}</h3>
-                <p style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>{cat.jobs} projects available</p>
+                <p style={{ color: 'var(--text-tertiary)', fontSize: '14px', lineHeight: 1.4 }}>{cat.description || "Ushbu yo'nalishdagi eng sara xizmatlar"}</p>
               </div>
-            ))}
+            )})}
+            {dbCategories.length === 0 && <p style={{color: 'var(--text-secondary)'}}>Kategoriyalar maxsus API dan kutilmoqda...</p>}
           </div>
         </div>
       </section>
@@ -86,12 +130,12 @@ const Home = () => {
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '32px' }}>
             {featuredServices.map((service) => (
-              <div key={service.id} className="glass-panel" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ width: '100%', height: '200px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Link to={`/product/${service.id}`} key={service.id} className="glass-panel" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', textDecoration: 'none', color: 'inherit', transition: 'transform 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}>
+                <div style={{ width: '100%', height: '200px', background: service.main_image ? 'rgba(255,255,255,0.05)' : getRandomGradient(service.id), display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                   {service.main_image ? (
-                     <img src={`http://127.0.0.1:8000${service.main_image}`} alt={service.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                     <img src={getImageUrl(service.main_image)} alt={service.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                     <span style={{color: 'var(--text-tertiary)'}}>Rasm yo'q</span>
+                     <span style={{color: '#fff', fontSize: '24px', fontWeight: 'bold', letterSpacing: '2px', opacity: 0.8}}>{service.title.substring(0, 15)}...</span>
                   )}
                 </div>
                 <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -116,7 +160,7 @@ const Home = () => {
                     <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>${service.price_standard}</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
             {featuredServices.length === 0 && <p className="text-secondary">Bazangizda hozircha hech qanday e'lon qilingan xizmatlar mavjud emas.</p>}
           </div>
