@@ -49,7 +49,6 @@ class Category(models.Model):
 class Product(models.Model):
     title = models.CharField(max_length=300, verbose_name="Sarlavha")
     slug = models.SlugField(max_length=300, unique=True, blank=True,null=True)
-    image_vector = models.JSONField(null=True, blank=True)
     seller = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,

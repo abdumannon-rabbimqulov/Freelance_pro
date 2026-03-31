@@ -8,7 +8,6 @@ router.register(r'products', ProductViewSet, basename='product')
 
 urlpatterns=[
     path('', include(router.urls)),
-    path('similar-search/', SimilarProductListView.as_view(), name='similar-product-search'),
     path('product-list/',ProductList.as_view()),
     path('admin-product-list/', AdminProductList.as_view(), name='admin-product-list'),
     path('product/<int:pk>/approve/', ApproveProduct.as_view(), name='approve-product'),
