@@ -2,9 +2,7 @@ from django.shortcuts import render,get_object_or_404
 from .models import ProductImage,Product
 from .serializers import *
 from rest_framework import viewsets, permissions,status
-from .services import generate_image_vector
 from rest_framework.generics import ListAPIView,CreateAPIView
-import numpy as np
 from django.db import models
 from rest_framework.permissions import AllowAny,IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
@@ -12,8 +10,6 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from shared.permissions import IsProfileComplete, IsProfileCompleteOrReadOnly, IsOwnerOrReadOnly
 from notifications.models import Notification
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -29,14 +25,14 @@ class ProductViewSet(viewsets.ModelViewSet):
         for img in images[:5]:
             ProductImage.objects.create(product=product, image=img)
 
-        if product.main_image:
-            try:
-                vector = generate_image_vector(product.main_image.path)
-                if vector:
-                    product.image_vector = vector
-                    product.save(update_fields=['image_vector'])
-            except Exception as e:
-                print(f"Rasm vektorlashda xatolik: {e}")
+        # if product.main_image:
+        #     try:
+        #         vector = generate_image_vector(product.main_image.path)
+        #         if vector:
+        #             product.image_vector = vector
+        #             product.save(update_fields=['image_vector'])
+        #     except Exception as e:
+        #         print(f"Rasm vektorlashda xatolik: {e}")
 
     def get_queryset(self):
         user = self.request.user
