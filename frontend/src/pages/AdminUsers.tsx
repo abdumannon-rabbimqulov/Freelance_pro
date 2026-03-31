@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { Users, Mail, Phone, UserCheck, Shield, ShoppingBag, Briefcase } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -10,10 +10,7 @@ const AdminUsers = () => {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access');
-            const res = await axios.get('http://127.0.0.1:8000/users/user-list/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get('users/user-list/');
             setUsers(res.data);
         } catch (err) {
             toast.error("Foydalanuvchilarni yuklashda xatolik");

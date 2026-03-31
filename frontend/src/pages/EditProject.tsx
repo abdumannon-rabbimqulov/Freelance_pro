@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Upload, Loader, Save, ArrowLeft } from 'lucide-react';
@@ -29,8 +29,8 @@ const EditProject = () => {
         const fetchData = async () => {
             try {
                 const [catsRes, projectRes] = await Promise.all([
-                    axios.get('http://127.0.0.1:8000/products/categories/'),
-                    axios.get(`http://127.0.0.1:8000/service/${slug}/`)
+                    api.get('products/categories/'),
+                    api.get(`service/${slug}/`)
                 ]);
                 setCategories(catsRes.data);
                 const p = projectRes.data;
@@ -70,7 +70,6 @@ const EditProject = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const token = localStorage.getItem('access');
             const data = new FormData();
             Object.entries(formData).forEach(([key, value]) => {
                 data.append(key, value);
@@ -81,9 +80,8 @@ const EditProject = () => {
                 images.forEach((img) => data.append('images', img));
             }
 
-            await axios.put(`http://127.0.0.1:8000/service/${slug}/`, data, {
+            await api.put(`service/${slug}/`, data, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });

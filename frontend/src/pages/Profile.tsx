@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { AuthContext } from '../context/AuthContext';
 import { Trash2, CheckCircle, Clock, Plus, ExternalLink, Briefcase, Layout, Wallet, ArrowUpCircle, AlertCircle, Send, CreditCard, PlusCircle, ArrowDownCircle, History, ShieldCheck, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -46,10 +46,9 @@ const Profile = () => {
 
     const fetchFinancials = async () => {
         try {
-            const token = localStorage.getItem('access');
             const [transRes, payoutRes] = await Promise.all([
-                axios.get('http://127.0.0.1:8000/payments/transactions/', { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('http://127.0.0.1:8000/payments/payouts/', { headers: { Authorization: `Bearer ${token}` } })
+                api.get('payments/transactions/'),
+                api.get('payments/payouts/')
             ]);
             setTransactions(transRes.data);
             setPayoutRequests(payoutRes.data);
@@ -63,10 +62,7 @@ const Profile = () => {
         if (!payoutAmount || parseFloat(payoutAmount) <= 0) return toast.error("To'g'ri miqdor kiriting");
         
         try {
-            const token = localStorage.getItem('access');
-            await axios.post('http://127.0.0.1:8000/payments/payouts/', { amount: payoutAmount }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post('payments/payouts/', { amount: payoutAmount });
             toast.success("So'rov yuborildi. Admin ko'rib chiqishini kuting.");
             setShowPayoutModal(false);
             setPayoutAmount('');
@@ -78,10 +74,7 @@ const Profile = () => {
 
     const fetchCards = async () => {
         try {
-            const token = localStorage.getItem('access');
-            const res = await axios.get('http://127.0.0.1:8000/payments/cards/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get('payments/cards/');
             setCards(res.data);
             if (res.data.length > 0) setSelectedCardId(res.data[0].id);
         } catch (err) {
@@ -96,12 +89,9 @@ const Profile = () => {
         
         setDepositing(true);
         try {
-            const token = localStorage.getItem('access');
-            await axios.post('http://127.0.0.1:8000/payments/deposit/', {
+            await api.post('payments/deposit/', {
                 card_id: selectedCardId,
                 amount: depositAmount
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Balans muvaffaqiyatli to'ldirildi!");
             setShowTopUpModal(false);
@@ -118,10 +108,7 @@ const Profile = () => {
     const handleDeleteCard = async (id: string) => {
         if (!window.confirm("Kartani o'chirib yubormoqchimisiz?")) return;
         try {
-            const token = localStorage.getItem('access');
-            await axios.delete(`http://127.0.0.1:8000/payments/cards/${id}/`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`payments/cards/${id}/`);
             toast.success("Karta o'chirildi");
             fetchCards();
         } catch (err) {
@@ -132,14 +119,11 @@ const Profile = () => {
     const fetchMyItems = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access');
             const endpoint = isSeller 
-                ? 'http://127.0.0.1:8000/products/product-seller-list/' 
-                : 'http://127.0.0.1:8000/service/my-projects/';
+                ? 'products/product-seller-list/' 
+                : 'service/my-projects/';
             
-            const res = await axios.get(endpoint, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get(endpoint);
             setMyItems(res.data);
         } catch (err) {
             console.error("Ma'lumotlarni yuklashda xatolik:", err);
@@ -150,10 +134,7 @@ const Profile = () => {
 
     const fetchProposals = async () => {
         try {
-            const token = localStorage.getItem('access');
-            const res = await axios.get('http://127.0.0.1:8000/service/p/proposals/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get('service/p/proposals/');
             setProposals(res.data);
         } catch (err) {
             console.error("Takliflarni yuklashda xatolik:", err);
@@ -165,10 +146,7 @@ const Profile = () => {
         
         setAccepting(true);
         try {
-            const token = localStorage.getItem('access');
-            const res = await axios.post(`http://127.0.0.1:8000/service/p/proposals/${proposalId}/accept/`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.post(`service/p/proposals/${proposalId}/accept/`, {});
             toast.success(res.data.message || "Taklif qabul qilindi!");
             setShowProposalDetails(null);
             fetchProposals();
@@ -199,10 +177,7 @@ const Profile = () => {
     const handleProfileUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('access');
-            await axios.post('http://127.0.0.1:8000/users/user-change-info/', profileData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post('users/user-change-info/', profileData);
             toast.success("Ma'lumotlar yangilandi!");
             await refreshUser();
             setProfileData(prev => ({ ...prev, password: '', conf_password: '' }));
@@ -216,14 +191,11 @@ const Profile = () => {
         if (!window.confirm(`Haqiqatan ham ushbu ${itemType} o'chirib yubormoqchimisiz?`)) return;
 
         try {
-            const token = localStorage.getItem('access');
             const endpoint = isSeller 
-                ? `http://127.0.0.1:8000/products/product/${id}/` 
-                : `http://127.0.0.1:8000/service/${id}/`;
+                ? `products/product/${id}/` 
+                : `service/${id}/`;
 
-            await axios.delete(endpoint, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(endpoint);
             toast.success("Muvaffaqiyatli o'chirildi.");
             setMyItems(myItems.filter(p => p.id !== id));
         } catch (err) {

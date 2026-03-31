@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/api';
 import { toast } from 'react-toastify';
 import './Auth.css'; // Maxsus uslublar
 
@@ -16,7 +16,7 @@ const Login = () => {
     try {
       // Backend bizdan username yoki email kutyapti deb faraz qilyapmiz, odatda DRF-SimpleJWT username/password talab qiladi.
       // Eslatma: Backend kodi qandayligidan qat'iy nazar pastdagi payload ishlaydi
-      const response = await axios.post('http://127.0.0.1:8000/users/login/', {
+      const response = await api.post('users/login/', {
         user_input: email, 
         password: password
       });

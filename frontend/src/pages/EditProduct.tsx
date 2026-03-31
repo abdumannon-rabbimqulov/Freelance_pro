@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Upload, Loader, Save } from 'lucide-react';
@@ -29,8 +29,8 @@ const EditProduct = () => {
     const fetchData = async () => {
       try {
         const [catsRes, productRes] = await Promise.all([
-          axios.get('http://127.0.0.1:8000/products/categories/'),
-          axios.get(`http://127.0.0.1:8000/products/product/${id}/`)
+          api.get('products/categories/'),
+          api.get(`products/product/${id}/`)
         ]);
         
         setCategories(catsRes.data);
@@ -78,7 +78,6 @@ const EditProduct = () => {
     const toastId = toast.loading("O'zgarishlar saqlanmoqda...");
 
     try {
-      const token = localStorage.getItem('access');
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         data.append(key, value);
@@ -89,9 +88,8 @@ const EditProduct = () => {
         images.forEach((img) => data.append('images', img));
       }
 
-      await axios.put(`http://127.0.0.1:8000/products/product/${id}/`, data, {
+      await api.put(`products/product/${id}/`, data, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });

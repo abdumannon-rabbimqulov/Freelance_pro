@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Briefcase, Info, DollarSign, Clock, Layers, Upload, Loader } from 'lucide-react';
@@ -25,7 +25,7 @@ const CreateProject = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/products/categories/');
+        const res = await api.get('products/categories/');
         setCategories(res.data);
       } catch (err) {
         toast.error("Kategoriyalarni yuklashda xatolik.");
@@ -69,7 +69,6 @@ const CreateProject = () => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('access');
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         data.append(key, value);
@@ -82,9 +81,8 @@ const CreateProject = () => {
         });
       }
 
-      await axios.post('http://127.0.0.1:8000/service/', data, {
+      await api.post('service/', data, {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });

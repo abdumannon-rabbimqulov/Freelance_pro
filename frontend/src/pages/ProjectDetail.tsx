@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/api';
 import { toast } from 'react-toastify';
 import { Clock, MessageCircle, ArrowLeft, DollarSign } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
@@ -24,7 +24,7 @@ const ProjectDetail = () => {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    axios.get(`http://127.0.0.1:8000/service/${slug}/`)
+    api.get(`service/${slug}/`)
       .then(res => {
         setProject(res.data);
         setActiveImage(res.data.main_image);
@@ -46,12 +46,8 @@ const ProjectDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Haqiqatan ham ushbu e'lonni o'chirmoqchimisiz?")) return;
     try {
-      const token = localStorage.getItem('access');
-      await axios.delete(`http://127.0.0.1:8000/service/${slug}/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`service/${slug}/`);
       toast.success("E'lon o'chirildi");
       navigate('/');
     } catch (error) {
@@ -69,14 +65,11 @@ const ProjectDetail = () => {
 
     setSending(true);
     try {
-      const token = localStorage.getItem('access');
-      await axios.post('http://127.0.0.1:8000/service/p/proposals/', {
+      await api.post('service/p/proposals/', {
         project: project.id,
         price: proposalData.price,
         delivery_time: proposalData.delivery_time,
         description: proposalData.description
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Taklifingiz muvaffaqiyatli yuborildi!");
       setShowProposalModal(false);

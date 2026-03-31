@@ -1,7 +1,7 @@
 import { ArrowRight, Code, PenTool, Video, Search, Star, Briefcase, LayoutGrid } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useContext, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { AuthContext } from '../context/AuthContext';
 
 const Home = () => {
@@ -16,10 +16,10 @@ const Home = () => {
     setLoading(true);
     try {
       const endpoint = activeTab === 'services' 
-        ? 'http://127.0.0.1:8000/products/product-list/' 
-        : 'http://127.0.0.1:8000/service/';
+        ? 'products/product-list/' 
+        : 'service/';
       
-      const res = await axios.get(endpoint, {
+      const res = await api.get(endpoint, {
         params: { category: selectedCategory }
       });
 
@@ -49,7 +49,7 @@ const Home = () => {
 
   useEffect(() => {
     // Kategoriyalarni yuklash
-    axios.get('http://127.0.0.1:8000/products/categories/')
+    api.get('products/categories/')
       .then(res => setDbCategories(res.data))
       .catch(err => console.error("Kategoriyalarni yuklashda xatolik:", err));
   }, []);

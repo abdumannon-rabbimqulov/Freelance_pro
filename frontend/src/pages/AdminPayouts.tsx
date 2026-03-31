@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { toast } from 'react-toastify';
 import { CheckCircle, XCircle, Clock, AlertCircle, User } from 'lucide-react';
 import './Auth.css';
@@ -13,10 +13,7 @@ const AdminPayouts = () => {
     const fetchPayouts = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access');
-            const res = await axios.get('http://127.0.0.1:8000/payments/payouts/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get('payments/payouts/');
             setPayouts(res.data);
         } catch (err) {
             toast.error("So'rovlarni yuklashda xatolik");
@@ -32,10 +29,7 @@ const AdminPayouts = () => {
     const handleApprove = async (id: string) => {
         if (!window.confirm("Haqiqatan ham ushbu to'lovni tasdiqlamoqchimisiz?")) return;
         try {
-            const token = localStorage.getItem('access');
-            await axios.post(`http://127.0.0.1:8000/payments/payouts/${id}/approve/`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`payments/payouts/${id}/approve/`, {});
             toast.success("Muvaffaqiyatli tasdiqlandi");
             fetchPayouts();
         } catch (err: any) {
@@ -46,11 +40,8 @@ const AdminPayouts = () => {
     const handleReject = async () => {
         if (!rejectionReason) return toast.error("Rad etish sababini kiriting");
         try {
-            const token = localStorage.getItem('access');
-            await axios.post(`http://127.0.0.1:8000/payments/payouts/${selectedPayout.id}/reject/`, {
+            await api.post(`payments/payouts/${selectedPayout.id}/reject/`, {
                 rejection_reason: rejectionReason
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("So'rov rad etildi");
             setSelectedPayout(null);

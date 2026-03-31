@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { Check, ExternalLink, ShieldAlert, Users, TrendingUp, CircleDollarSign, BarChart3, Activity, Award, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -15,13 +15,10 @@ const AdminDashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access');
-            const headers = { Authorization: `Bearer ${token}` };
-
             const [productsRes, projectsRes, statsRes] = await Promise.all([
-                axios.get('http://127.0.0.1:8000/products/admin-product-list/', { headers }),
-                axios.get('http://127.0.0.1:8000/service/admin-list/', { headers }),
-                axios.get('http://127.0.0.1:8000/payments/admin-stats/', { headers })
+                api.get('products/admin-product-list/'),
+                api.get('service/admin-list/'),
+                api.get('payments/admin-stats/')
             ]);
 
             setPendingProducts(productsRes.data);
@@ -40,10 +37,7 @@ const AdminDashboard = () => {
 
     const handleApproveProduct = async (id: number) => {
         try {
-            const token = localStorage.getItem('access');
-            await axios.post(`http://127.0.0.1:8000/products/product/${id}/approve/`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`products/product/${id}/approve/`, {});
             toast.success("Xizmat tasdiqlandi!");
             setPendingProducts(pendingProducts.filter(p => p.id !== id));
         } catch (err) {
@@ -53,10 +47,7 @@ const AdminDashboard = () => {
 
     const handleApproveProject = async (id: number) => {
         try {
-            const token = localStorage.getItem('access');
-            await axios.post(`http://127.0.0.1:8000/service/approve/${id}/`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`service/approve/${id}/`, {});
             toast.success("E'lon tasdiqlandi!");
             setPendingProjects(pendingProjects.filter(p => p.id !== id));
         } catch (err) {

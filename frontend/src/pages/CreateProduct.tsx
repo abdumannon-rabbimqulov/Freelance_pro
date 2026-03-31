@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Upload, Loader } from 'lucide-react';
@@ -25,7 +25,7 @@ const CreateProduct = () => {
 
   // Kategoriya ro'yxatini yuklash
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/products/categories/')
+    api.get('products/categories/')
       .then(res => {
         setCategories(res.data);
         if (res.data && res.data.length > 0) {
@@ -76,7 +76,6 @@ const CreateProduct = () => {
     const toastId = toast.loading("Xizmat yaratilmoqda, A.I. rasmlarni tahlil qilmoqda...");
 
     try {
-      const token = localStorage.getItem('access');
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         data.append(key, value);
@@ -90,9 +89,8 @@ const CreateProduct = () => {
         data.append('images', img);
       });
 
-      await axios.post('http://127.0.0.1:8000/products/products/', data, {
+      await api.post('products/products/', data, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });

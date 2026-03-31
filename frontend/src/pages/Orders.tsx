@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { toast } from 'react-toastify';
 import { ShoppingBag, DollarSign, Clock, CheckCircle, XCircle, Loader, Briefcase } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
@@ -26,10 +26,7 @@ const Orders = () => {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access');
-            const res = await axios.get('http://127.0.0.1:8000/orders/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get('orders/');
             setOrders(res.data);
         } catch (err) {
             toast.error("Buyurtmalarni yuklashda xatolik");
@@ -49,12 +46,9 @@ const Orders = () => {
 
     const updateStatus = async (orderId: string, newStatus: string, metadata = {}) => {
         try {
-            const token = localStorage.getItem('access');
-            await axios.patch(`http://127.0.0.1:8000/orders/${orderId}/`, {
+            await api.patch(`orders/${orderId}/`, {
                 status: newStatus,
                 ...metadata
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Muvaffaqiyatli yangilandi");
             setShowModal(false);
@@ -72,14 +66,12 @@ const Orders = () => {
         
         setDelivering(true);
         try {
-            const token = localStorage.getItem('access');
             const formData = new FormData();
             formData.append('delivery_text', deliveryText);
             if (deliveryFile) formData.append('delivery_file', deliveryFile);
 
-            await axios.post(`http://127.0.0.1:8000/orders/${selectedOrderId}/deliver/`, formData, {
+            await api.post(`orders/${selectedOrderId}/deliver/`, formData, {
                 headers: { 
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });

@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from shared.permissions import IsProfileComplete, IsProfileCompleteOrReadOnly, IsOwnerOrReadOnly
 from notifications.models import Notification
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()

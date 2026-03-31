@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { CreditCard, X, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import VirtualCard from './VirtualCard';
@@ -44,10 +44,7 @@ const AddCardModal = ({ onClose, onSuccess }: AddCardModalProps) => {
 
         setLoading(true);
         try {
-            const token = localStorage.getItem('access');
-            await axios.post('http://127.0.0.1:8000/payments/cards/', cardData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post('payments/cards/', cardData);
             toast.success("Karta muvaffaqiyatli qo'shildi!");
             onSuccess();
             onClose();

@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/api';
 import { toast } from 'react-toastify';
 import { Star, Clock, RefreshCw, MessageCircle, ArrowLeft } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
@@ -16,7 +16,7 @@ const ProductDetail = () => {
   const [activeImage, setActiveImage] = useState<string>("");
 
   useEffect(() => {
-    axios.get(`http://127.0.0.1:8000/products/product/${id}/`)
+    api.get(`products/product/${id}/`)
       .then(res => {
         setProduct(res.data.data);
         setActiveImage(res.data.data.main_image);
@@ -46,10 +46,7 @@ const ProductDetail = () => {
 
     setStartingChat(true);
     try {
-      const token = localStorage.getItem('access');
-      await axios.post(`http://127.0.0.1:8000/products/message-start/${id}/`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post(`products/message-start/${id}/`, {});
       toast.success("Chat ulandi! Endi Muloqot qilishingiz mumkin");
       navigate('/chat');
     } catch (error: any) {
@@ -64,10 +61,7 @@ const ProductDetail = () => {
   const handleDelete = async () => {
     if (!window.confirm("Haqiqatan ham ushbu xizmatni o'chirmoqchimisiz?")) return;
     try {
-      const token = localStorage.getItem('access');
-      await axios.delete(`http://127.0.0.1:8000/products/product/${id}/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`products/product/${id}/`);
       toast.success("Xizmat o'chirildi");
       navigate('/');
     } catch (error) {
@@ -85,12 +79,9 @@ const ProductDetail = () => {
     if (requirements === null) return;
 
     try {
-      const token = localStorage.getItem('access');
-      await axios.post('http://127.0.0.1:8000/orders/', {
+      await api.post('orders/', {
         product: product.id,
         requirements: requirements
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Buyurtma muvaffaqiyatli qabul qilindi!");
       navigate('/orders');

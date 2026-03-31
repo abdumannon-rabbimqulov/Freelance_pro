@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { toast } from 'react-toastify';
 import { Percent, Save, RefreshCw, AlertCircle, TrendingUp } from 'lucide-react';
 import './Auth.css';
@@ -12,10 +12,7 @@ const AdminSettings = () => {
     const fetchSettings = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access');
-            const res = await axios.get('http://127.0.0.1:8000/payments/settings/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get('payments/settings/');
             setCommission(res.data.commission_percent);
         } catch (err) {
             toast.error("Sozlamalarni yuklashda xatolik");
@@ -32,11 +29,8 @@ const AdminSettings = () => {
         e.preventDefault();
         setSaving(true);
         try {
-            const token = localStorage.getItem('access');
-            await axios.patch('http://127.0.0.1:8000/payments/settings/', {
+            await api.patch('payments/settings/', {
                 commission_percent: commission
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Komissiya foizi yangilandi!");
             fetchSettings();
