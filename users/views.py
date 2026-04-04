@@ -193,3 +193,13 @@ class MeView(APIView):
     def get(self, request):
         serializer = CustomUserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+class UserListView(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    def get(self, request):
+        if request.user.auth_role != ADMIN:
+            return Response({"error": "Sizga ruxsat berilmagan"}, status=status.HTTP_403_FORBIDDEN)
+        
+        users = CustomUser.objects.all()
+        serializer = CustomUserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-toastify';
@@ -31,7 +31,7 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post('http://127.0.0.1:8000/users/signup/', {
+      const res = await api.post('users/signup/', {
         email: email,
         auth_role: role
       });
@@ -51,7 +51,7 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post('http://127.0.0.1:8000/users/code-verify/', 
+      const res = await api.post('users/code-verify/', 
         { code: code },
         { headers: { Authorization: `Bearer ${tokens.access}` } }
       );
@@ -74,7 +74,7 @@ const Register = () => {
     }
     setLoading(true);
     try {
-      const res = await axios.put('http://127.0.0.1:8000/users/user-change-info/', 
+      const res = await api.put('users/user-change-info/', 
         {
           first_name,
           last_name,

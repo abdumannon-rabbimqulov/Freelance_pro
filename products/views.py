@@ -2,15 +2,13 @@ from django.shortcuts import render,get_object_or_404
 from .models import ProductImage,Product
 from .serializers import *
 from rest_framework import viewsets, permissions,status
-from .services import generate_image_vector
 from rest_framework.generics import ListAPIView,CreateAPIView
-import numpy as np
 from django.db import models
 from rest_framework.permissions import AllowAny,IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-from shared.permissions import IsProfileComplete, IsProfileCompleteOrReadOnly
+from shared.permissions import IsProfileComplete, IsProfileCompleteOrReadOnly, IsOwnerOrReadOnly
 from notifications.models import Notification
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -23,14 +21,12 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         product=serializer.save(seller=self.request.user, is_active=False)
-        if product.main_image:
-            try:
-                vector = generate_image_vector(product.main_image.path)
-                if vector:
-                    product.image_vector = vector
-                    product.save(update_fields=['image_vector'])
-            except Exception as e:
-                print(f"Rasm vektorlashda xatolik: {e}")
+        
+        # Galereya rasmlarini (max 5) saqlash
+        images = self.request.FILES.getlist('images')
+        for img in images[:5]:
+            ProductImage.objects.create(product=product, image=img)
+
 
     def get_queryset(self):
         user = self.request.user
@@ -47,47 +43,6 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
 
-class SimilarProductListView(APIView):
-    permission_classes = (AllowAny, )
-
-    def post(self, request, *args, **kwargs):
-        image_file = request.FILES.get('image')
-        if not image_file:
-            return Response({"error": "Rasm yuklanmadi (key nomi 'image' bo'lishi kerak)"}, status=400)
-
-        query_vector = generate_image_vector(image_file)
-        if not query_vector:
-            return Response({"error": "Rasmni qayta ishlab bo'lmadi"}, status=500)
-
-        all_products = Product.objects.exclude(image_vector__isnull=True)
-        product_matches = []
-
-        v1 = np.array(query_vector)
-        v1_norm = np.linalg.norm(v1)
-
-        for product in all_products:
-            v2 = np.array(product.image_vector)
-            v2_norm = np.linalg.norm(v2)
-
-            similarity = np.dot(v1, v2) / (v1_norm * v2_norm)
-
-            if similarity > 0.7:
-                product_matches.append((product.id, similarity))
-
-        product_matches.sort(key=lambda x: x[1], reverse=True)
-        matched_ids = [item[0] for item in product_matches[:10]]
-
-        if not matched_ids:
-            return Response([], status=200)
-
-        preserved = models.Case(*[models.When(pk=pk, then=pos) for pos, pk in enumerate(matched_ids)])
-        queryset = Product.objects.filter(id__in=matched_ids).order_by(preserved)
-
-        serializer = ProductSerializers(queryset, many=True)
-        return Response(serializer.data)
-
-
-
 
 class CategoryListView(ListAPIView):
     permission_classes = (AllowAny, )
@@ -95,17 +50,41 @@ class CategoryListView(ListAPIView):
     serializer_class = CategorySerializer
 
 class ProductDetailView(APIView):
-    permission_classes = (AllowAny, )
-    def get(self,request,pk):
-        product=get_object_or_404(Product,id=pk)
+    permission_classes = [IsProfileCompleteOrReadOnly, IsOwnerOrReadOnly]
+
+    def get(self, request, pk):
+        product = get_object_or_404(Product, id=pk)
         product.increment_views()
-        serializer=ProductSerializers(product)
-        response={
-            'status':status.HTTP_200_OK,
-            'message':'product',
-            'data':serializer.data
+        serializer = ProductSerializers(product)
+        response = {
+            'status': status.HTTP_200_OK,
+            'message': 'product',
+            'data': serializer.data
         }
         return Response(response)
+
+    def put(self, request, pk):
+        product = get_object_or_404(Product, id=pk)
+        self.check_object_permissions(request, product)
+        
+        serializer = ProductSerializers(product, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'status': status.HTTP_200_OK,
+                'message': 'Xizmat muvaffaqiyatli yangilandi',
+                'data': serializer.data
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        product = get_object_or_404(Product, id=pk)
+        self.check_object_permissions(request, product)
+        product.delete()
+        return Response({
+            'status': status.HTTP_204_NO_CONTENT,
+            'message': 'Xizmat muvaffaqiyatli o\'chirildi'
+        }, status=status.HTTP_204_NO_CONTENT)
     def post(self,request,pk):
         product = get_object_or_404(Product, pk=pk)
         user=self.request.user
@@ -135,7 +114,18 @@ class ProductList(ListAPIView):
     serializer_class = ProductSerializers
 
     def get_queryset(self):
-        return Product.objects.filter(is_active=True).order_by('-created_at')
+        user = self.request.user
+        queryset = Product.objects.filter(is_active=True)
+        
+        # Agar foydalanuvchi kirgan bo'lsa, o'zining hali tasdiqlanmagan ishlarini ham qo'shib ko'rsatamiz
+        if user.is_authenticated:
+            queryset = Product.objects.filter(models.Q(is_active=True) | models.Q(seller=user))
+            
+        queryset = queryset.order_by('-created_at')
+        category_id = self.request.query_params.get('category')
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+        return queryset
 
 
 class AdminProductList(ListAPIView):

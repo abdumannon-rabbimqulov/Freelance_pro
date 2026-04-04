@@ -11,6 +11,7 @@ interface User {
   photo?: string;
   is_staff?: boolean;
   auth_role?: string;
+  balance?: number;
 }
 
 interface AuthContextType {
@@ -29,7 +30,7 @@ export const AuthContext = createContext<AuthContextType>({
   refreshUser: async () => {},
 });
 
-import axios from 'axios';
+import api from '../api/api';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -39,9 +40,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const access = localStorage.getItem('access');
     if (access) {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/users/me/', {
-          headers: { Authorization: `Bearer ${access}` }
-        });
+        const res = await api.get('users/me/');
         localStorage.setItem('user_data', JSON.stringify(res.data));
         setUser(res.data);
       } catch (err) {
@@ -58,9 +57,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const storedUser = localStorage.getItem('user_data');
         if (storedUser) {
           setUser(JSON.parse(storedUser));
+          // Re-fetch to ensure the balance is fresh
+          refreshUser();
         } else {
           const decoded = jwtDecode<User>(access);
           setUser(decoded);
+          refreshUser();
         }
         setToken(access);
       } catch (e) {

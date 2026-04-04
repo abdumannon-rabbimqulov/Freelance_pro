@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.text import slugify
 from users.models import CustomUser
 from products.models import Category
+import uuid
 
 class ProjectBoard(models.Model):
 
@@ -24,8 +25,6 @@ class ProjectBoard(models.Model):
     description = models.TextField()
     full_description = models.TextField()
 
-
-
     price_standard = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     delivery_standard = models.IntegerField(null=True, blank=True)
     revisions_standard = models.IntegerField(null=True, blank=True)
@@ -35,7 +34,6 @@ class ProjectBoard(models.Model):
 
     views_count = models.IntegerField(default=0)
     orders_count = models.IntegerField(default=0)
-
 
     is_active = models.BooleanField(default=False)
     is_published = models.BooleanField(default=False)
@@ -77,4 +75,43 @@ class ReviewBoard(models.Model):
         unique_together = ('product', 'user')
 
     def __str__(self):
-        return f"{self.user.username} - {self.product.name} - {self.rating}"
+        return f"{self.user.username} - {self.product.title} - {self.rating}"
+
+
+class ProjectImage(models.Model):
+    project = models.ForeignKey(
+        ProjectBoard,
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
+    image = models.ImageField(upload_to='projects/gallery/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.project.title} "
+
+
+class Proposal(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey(ProjectBoard, on_delete=models.CASCADE, related_name='proposals')
+    seller = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='proposals')
+    
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    delivery_time = models.IntegerField(help_text="Days")
+    description = models.TextField()
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Proposal {self.seller.username} -> {self.project.title}"

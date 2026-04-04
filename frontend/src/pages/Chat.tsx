@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { Send, User as UserIcon, Clock } from 'lucide-react';
 import './Chat.css';
 
@@ -33,10 +33,7 @@ const ChatDashboard = () => {
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const token = localStorage.getItem('access');
-        const res = await axios.get('http://127.0.0.1:8000/products/chat-list/', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await api.get('products/chat-list/');
         setChats(res.data);
       } catch (e) {
         console.error("Chatlarni yuklashda xatolik:", e);
@@ -52,10 +49,7 @@ const ChatDashboard = () => {
     if (!activeChatId) return;
     const fetchMessages = async () => {
       try {
-        const token = localStorage.getItem('access');
-        const res = await axios.get(`http://127.0.0.1:8000/products/chat-detail/${activeChatId}/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await api.get(`products/chat-detail/${activeChatId}/`);
         setMessages(res.data);
       } catch (e) {
         console.error("Xabarlarni yuklashda xatolik:", e);
@@ -73,11 +67,8 @@ const ChatDashboard = () => {
     if (!newMessage.trim() || !activeChatId) return;
     
     try {
-      const token = localStorage.getItem('access');
-      const res = await axios.post(`http://127.0.0.1:8000/products/chat-detail/${activeChatId}/`, {
+      const res = await api.post(`products/chat-detail/${activeChatId}/`, {
         text: newMessage
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       // Append local
       setMessages(prev => [...prev, res.data]);

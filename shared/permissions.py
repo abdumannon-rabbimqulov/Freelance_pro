@@ -20,3 +20,19 @@ class IsProfileCompleteOrReadOnly(BasePermission):
         if request.method in SAFE_METHODS:
             return True
         return bool(request.user and request.user.is_authenticated and request.user.auth_status == DONE)
+class IsOwnerOrReadOnly(BasePermission):
+    """
+    Faqat ob'ekt egasiga tahrirlash (PUT, PATCH) va o'chirish (DELETE) ruxsatini beradi.
+    Boshqalar faqat o'qiy oladi (GET, HEAD, OPTIONS).
+    """
+    def has_object_permission(self, request, view, obj):
+        # Read-only metodlarga ruxsat berish
+        if request.method in SAFE_METHODS:
+            return True
+        
+        # Ob'ekt egasi (seller yoki client) ekanini tekshirish
+        if hasattr(obj, 'seller'):
+            return obj.seller == request.user
+        if hasattr(obj, 'client'): 
+            return obj.client == request.user
+        return False

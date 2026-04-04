@@ -29,6 +29,7 @@ class CustomUser(AbstractUser,BasModel):
             blank=True,null=True,
             validators=[FileExtensionValidator(allowed_extensions=['png','jpg','heic'])]
                             )
+    balance = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
 
     def __str__(self):
         return f"{self.username} Role {self.auth_role}"
@@ -40,6 +41,16 @@ class CustomUser(AbstractUser,BasModel):
     @property
     def last_seen(self):
         return cache.get(f"last-seen-{self.id}")
+
+    @property
+    def completed_orders_count(self):
+        from orders.models import Order
+        return Order.objects.filter(seller=self, status='completed').count()
+
+    @property
+    def cancelled_orders_count(self):
+        from orders.models import Order
+        return Order.objects.filter(seller=self, status='cancelled').count()
 
 
     def check_username(self):

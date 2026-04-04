@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/api';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Briefcase, Info, DollarSign, Clock, Layers } from 'lucide-react';
+import { Briefcase, Info, DollarSign, Clock, Layers, Upload, Loader } from 'lucide-react';
 
 const CreateProject = () => {
   const navigate = useNavigate();
@@ -19,10 +19,13 @@ const CreateProject = () => {
     revisions_standard: '1'
   });
 
+  const [images, setImages] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/products/category-list/');
+        const res = await api.get('products/categories/');
         setCategories(res.data);
       } catch (err) {
         toast.error("Kategoriyalarni yuklashda xatolik.");
@@ -30,6 +33,32 @@ const CreateProject = () => {
     };
     fetchCategories();
   }, []);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      const totalImages = [...images, ...selectedFiles].slice(0, 5); // Maks 5 ta
+      
+      setImages(totalImages);
+      
+      const newPreviews = totalImages.map(file => URL.createObjectURL(file));
+      setPreviews(newPreviews);
+      
+      if (selectedFiles.length + images.length > 5) {
+        toast.info("Maksimal 5 ta rasm yuklash mumkin.");
+      }
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
+
+    const newPreviews = [...previews];
+    newPreviews.splice(index, 1);
+    setPreviews(newPreviews);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,16 +69,37 @@ const CreateProject = () => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('access');
-      await axios.post('http://127.0.0.1:8000/service/', formData, {
+      const data = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        data.append(key, value);
+      });
+      
+      if (images.length > 0) {
+        data.append('main_image', images[0]);
+        images.forEach((img) => {
+           data.append('images', img);
+        });
+      }
+
+      await api.post('service/', data, {
         headers: {
-          Authorization: `Bearer ${token}`
+          'Content-Type': 'multipart/form-data'
         }
       });
       toast.success("E'lon muvaffaqiyatli saqlandi! Admin tasdiqlashini kuting.");
       navigate('/profile');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "E'lon berishda xatolik yuz berdi.");
+      let errorMsg = "E'lon berishda xatolik yuz berdi.";
+      if (err.response?.data) {
+        if (err.response.data.message) {
+            errorMsg = err.response.data.message;
+        } else {
+            const firstKey = Object.keys(err.response.data)[0];
+            const firstError = err.response.data[firstKey];
+            errorMsg = `${firstKey}: ${Array.isArray(firstError) ? firstError[0] : firstError}`;
+        }
+      }
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -103,7 +153,7 @@ const CreateProject = () => {
                 value={formData.description}
                 onChange={e => setFormData({...formData, description: e.target.value})}
                 required
-                style={{ height: '100px' }}
+                style={{ height: '100px', width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: '#fff' }}
               />
             </div>
 
@@ -114,7 +164,7 @@ const CreateProject = () => {
                 value={formData.full_description}
                 onChange={e => setFormData({...formData, full_description: e.target.value})}
                 required
-                style={{ height: '180px' }}
+                style={{ height: '180px', width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: '#fff' }}
               />
             </div>
 
@@ -145,13 +195,44 @@ const CreateProject = () => {
               </div>
             </div>
 
+            <div className="input-group mt-2">
+              <label>Loyihaga oid rasmlar (Ixtiyoriy, maks 5 ta)</label>
+              <div 
+                style={{
+                  border: '2px dashed var(--glass-border)', borderRadius: '16px', padding: '30px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', background: 'rgba(255,255,255,0.02)', position: 'relative', marginBottom: '15px'
+                }}
+              >
+                <input 
+                  type="file" multiple accept="image/*" onChange={handleImageChange}
+                  style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                />
+                <Upload size={36} style={{ color: 'var(--accent-secondary)', marginBottom: '10px' }} />
+                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Rasmlarni tanlang ({images.length}/5)</p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '10px' }}>
+                 {previews.map((src, idx) => (
+                   <div key={idx} style={{ position: 'relative', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+                     <img src={src} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                     <button 
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(255,0,0,0.7)', color: '#fff', border: 'none', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px' }}
+                     >X</button>
+                   </div>
+                 ))}
+              </div>
+            </div>
+
             <button 
                 type="submit" 
                 className="btn btn-primary" 
-                style={{ marginTop: '20px', padding: '15px', fontSize: '18px', background: 'var(--accent-secondary)' }}
+                style={{ marginTop: '20px', padding: '15px', fontSize: '18px', background: 'var(--accent-secondary)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}
                 disabled={loading}
             >
-              {loading ? "Yuborilmoqda..." : "E'lonni chop etishga yuborish"}
+              {loading ? <><Loader className="spin" size={20}/> Yuborilmoqda...</> : "E'lonni chop etishga yuborish"}
             </button>
           </form>
         </div>

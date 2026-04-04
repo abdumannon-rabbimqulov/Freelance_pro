@@ -15,20 +15,30 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'slug', 'description']
 
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image', 'created_at']
+
 class ProductSerializers(serializers.ModelSerializer):
     reviews = ReviewSerializer(many=True, read_only=True)
+    images = ProductImageSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
     slug = serializers.SlugField(read_only=True)
     seller = serializers.StringRelatedField(read_only=True)
+    seller_id = serializers.ReadOnlyField(source='seller.id')
+    seller_completed_orders = serializers.ReadOnlyField(source='seller.completed_orders_count')
+    seller_cancelled_orders = serializers.ReadOnlyField(source='seller.cancelled_orders_count')
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     class Meta:
         model = Product
         fields = [
-            'id', 'title', 'slug', 'seller', 'category',
-            'description', 'full_description', 'price_standard',
+            'id', 'title', 'slug', 'seller', 'seller_id', 
+            'seller_completed_orders', 'seller_cancelled_orders',
+            'category', 'description', 'full_description', 'price_standard',
             'delivery_time_standard', 'revisions_standard',
             'main_image', 'views_count', 'orders_count',
-            'is_active', 'created_at','average_rating','reviews'
+            'is_active', 'created_at','average_rating','reviews', 'images'
         ]
         read_only_fields = ['views_count', 'orders_count',  'created_at']
 
